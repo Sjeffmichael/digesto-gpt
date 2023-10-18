@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "local-gpt"
+version = "0.1.0"
+description = ""
+authors = ["Sjeffmichael <sjeffmichael56@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+django = "^4.2.5"
+django-tailwind = "^3.6.0"
+django-browser-reload = "^1.11.0"
+django-htmx = "^1.16.0"
+langchain = "^0.0.285"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

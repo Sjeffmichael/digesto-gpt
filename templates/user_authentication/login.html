@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Local GPT Login{% endblock title %}
+{% block content_login %}
+<div class="flex items-center justify-center h-screen">
+    <div class="bg-cust-color-1 w-[424px] rounded-md flex flex-col justify-center px-6 py-12 lg:px-8">
+        <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+            <!-- image logo -->
+            <div class="">
+                <img src="https://freesvg.org/img/logo-generic.png" class="mx-auto max-h-36 w-auto">
+            </div>
+        </div>
+        <div class="sm:mx-auto sm:w-full sm:max-w-sm">
+            <form class="space-y-6" action="{% url 'authentication:login' %}" method="post">
+                {{ form.username }}
+                {{ form.password }}
+                {% csrf_token %}
+                <input class="flex w-full justify-center btn btn-primary" type="submit" value="Sing In">
+                <input type="hidden" name="next" value="{{ next }}"> 
+            </form>
+        </div>
+        <div class="mt-10 text-center text-gray-500">
+            <a href="" class="link">Forgot Password?</a>
+        </div>
+    </div>
+</div>
+{% endblock content_login %}
