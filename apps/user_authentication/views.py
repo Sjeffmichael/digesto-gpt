@@ -13,8 +13,8 @@ from . import forms
 
 # Create your views here.
 class LoginView(auth_views.LoginView):
-    template_name = "user_authentication/login.html"
     form_class = forms.LoginForm
+    template_name = "user_authentication/login.html"
     success_url = reverse_lazy("chats:index")
 
     @method_decorator(never_cache)

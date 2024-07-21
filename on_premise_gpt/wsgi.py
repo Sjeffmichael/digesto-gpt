@@ -1,5 +1,5 @@
 """
-WSGI config for local_gpt project.
+WSGI config for on_premise_gpt project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'local_gpt.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'on_premise_gpt.settings')
 
 application = get_wsgi_application()

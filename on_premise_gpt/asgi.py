@@ -1,5 +1,5 @@
 """
-ASGI config for local_gpt project.
+ASGI config for on_premise_gpt project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'local_gpt.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'on_premise_gpt.settings')
 
 application = get_asgi_application()

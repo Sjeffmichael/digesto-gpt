@@ -1,5 +1,5 @@
 """
-URL configuration for local_gpt project.
+URL configuration for on_premise_gpt project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.2/topics/http/urls/
@@ -22,5 +22,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("__reload__/", include("django_browser_reload.urls")),
     path("authentication/", include("apps.user_authentication.urls")),
-    path("", include("apps.chats.urls"))
+    path("", include("apps.chats.urls")),
+    path("", include("apps.users.urls")),      
 ]

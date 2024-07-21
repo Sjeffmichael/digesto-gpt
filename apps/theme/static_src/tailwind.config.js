@@ -18,8 +18,7 @@ module.exports = {
          * Main templates directory of the project (BASE_DIR/templates).
          * Adjust the following line to match your project structure.
          */
-        '../../templates/**/*.html',
-        '/home/michael/dev/local_gpt/templates/**/*.html',
+        '../../../templates/**/*.html',
 
         /*
          * Templates in other django apps (BASE_DIR/<any_app_name>/templates).
@@ -34,7 +33,7 @@ module.exports = {
         /* JS 1: Ignore any JavaScript in node_modules folder. */
         // '!../../**/node_modules',
         /* JS 2: Process all JavaScript files in the project. */
-        // '../../**/*.js',
+        '../../**/*.js',
 
         /**
          * Python: If you use Tailwind CSS classes in Python, uncomment the following line
@@ -45,8 +44,8 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                'cust-color-1': '#14181d'
-            }
+                primary: {"50":"#eff6ff","100":"#dbeafe","200":"#bfdbfe","300":"#93c5fd","400":"#60a5fa","500":"#3b82f6","600":"#2563eb","700":"#1d4ed8","800":"#1e40af","900":"#1e3a8a","950":"#172554"}
+              }
         },
     },
     plugins: [
@@ -59,16 +58,47 @@ module.exports = {
         require('@tailwindcss/typography'),
         require('@tailwindcss/line-clamp'),
         require('@tailwindcss/aspect-ratio'),
-        require("daisyui"),
+        require('flowbite/plugin')({
+            charts: true,
+            forms: true,
+            tooltips: true
+        }),
     ],
-    daisyui: {
-        themes: false, // true: all themes | false: only light + dark | array: specific themes like this ["light", "dark", "cupcake"]
-        darkTheme: "dark", // name of one of the included themes for dark mode
-        base: true, // applies background color and foreground color for root element by default
-        styled: true, // include daisyUI colors and design decisions for all components
-        utils: true, // adds responsive and modifier utility classes
-        rtl: false, // rotate style direction from left-to-right to right-to-left. You also need to add dir="rtl" to your html tag and install `tailwindcss-flip` plugin for Tailwind CSS.
-        prefix: "", // prefix for daisyUI classnames (components, modifiers and responsive class names. Not colors)
-        logs: true, // Shows info about daisyUI version and used config in the console when building your CSS
-    },
+    darkMode: 'media',
+    fontFamily: {
+        'body': [
+            'Inter', 
+            'ui-sans-serif', 
+            'system-ui', 
+            '-apple-system', 
+            'system-ui', 
+            'Segoe UI', 
+            'Roboto', 
+            'Helvetica Neue', 
+            'Arial', 
+            'Noto Sans', 
+            'sans-serif', 
+            'Apple Color Emoji', 
+            'Segoe UI Emoji', 
+            'Segoe UI Symbol', 
+            'Noto Color Emoji'
+        ],
+        'sans': [
+            'Inter', 
+            'ui-sans-serif', 
+            'system-ui', 
+            '-apple-system', 
+            'system-ui', 
+            'Segoe UI', 
+            'Roboto', 
+            'Helvetica Neue', 
+            'Arial', 
+            'Noto Sans', 
+            'sans-serif', 
+            'Apple Color Emoji', 
+            'Segoe UI Emoji', 
+            'Segoe UI Symbol', 
+            'Noto Color Emoji'
+        ]
+      }
 }

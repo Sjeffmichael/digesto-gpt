@@ -8,12 +8,14 @@ from django.views.generic import (
     UpdateView,
     DeleteView
 )
-
-
+from apps.user_authentication.models import User
 # Create your views here.
 class UserListView(ListView):
-    template_name = "users/user_list.html"
-    context_object_name = "users"
+    model = User
+    template_name = "users/users_list.html"
+    content_object_name = "users"
 
     def get_queryset(self):
-        pass
+        users = User.objects.all()
+
+        return users
