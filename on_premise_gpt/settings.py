@@ -164,3 +164,7 @@ LOGIN_URL = 'authentication:login'
 LOGIN_REDIRECT_URL = 'chats:index'
 LOGOUT_URL = 'authentication:logout'
 LOGOUT_REDIRECT_URL = 'authentication:login'
+
+# celery settings
+CELERY_BROKER_URL = "redis://localhost:6379"
+CELERY_RESULT_BACKEND = "redis://localhost:6379"
