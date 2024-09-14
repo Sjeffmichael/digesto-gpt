@@ -16,8 +16,17 @@ django-compressor = "^4.4"
 django-widget-tweaks = "^1.5.0"
 celery = "^5.4.0"
 redis = "^5.0.7"
-
+selenium = "^4.23.0"
+django-components = "^0.86"
+pre-commit = "^3.8.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "django"
+
+[tool.djlint]
+profile = "django"
+ignore = "H031,H006,H025"
