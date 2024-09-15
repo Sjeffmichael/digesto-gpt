@@ -9,6 +9,7 @@ import os.path
 import re
 
 import django
+from django.apps import apps
 
 # Set up the Django environment
 
@@ -27,6 +28,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from dotenv import load_dotenv
 
 # from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select, WebDriverWait
@@ -34,13 +36,15 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 # Now you can import the Law model
 from apps.digest_data.models import Law
 
+load_dotenv(".env")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "on_premise_gpt.settings")
 django.setup()
 
 DIGESTO_DOMAIN = "http://digesto.asamblea.gob.ni"
 DIGESTO_URL = DIGESTO_DOMAIN + "/consultas/digestos/"
-DOWNLOAD_DIR = "/home/michael/dev/on_premise_gpt/apps/digest_data/utils/digest_laws"
-HOME_DIR = os.path.expanduser("/home/michael/downloads")
+CHROMEDRIVER_FILES_PATH = os.getenv("CHROMEDRIVER_FILES_PATH")
+DOWNLOAD_DIR = f"{apps.get_app_config('digest_data')}/utils/digest_laws"
+HOME_DIR = os.path.expanduser(CHROMEDRIVER_FILES_PATH)
 
 
 def get_buttoms_by_table_id(table_id: str, browser, wait):

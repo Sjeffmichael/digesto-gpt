@@ -19,6 +19,7 @@ redis = "^5.0.7"
 selenium = "^4.23.0"
 django-components = "^0.86"
 pre-commit = "^3.8.0"
+python-dotenv = "^1.0.1"
 
 [build-system]
 requires = ["poetry-core"]
