@@ -1,0 +1,38 @@
+@keyframes fadeIn {
+   0% { opacity: 0; }
+   100% { opacity: 1; }
+}
+
+.loader-overlay {
+    display: none;
+    opacity: 0;
+    transition: opacity ease-in-out 0.2s;
+}
+.htmx-request .loader-overlay {
+    display: inline;
+    animation: fadeIn 0.2s ease-in forwards;
+}
+.htmx-request.loader-overlay {
+    display: inline;
+    animation: fadeIn 0.2s ease-in forwards;
+}
+/*
+.loader-overlay {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.htmx-request .loader-overlay {
+    display: inline;
+    animation: fadeIn 0.2s ease-in forwards;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+} */

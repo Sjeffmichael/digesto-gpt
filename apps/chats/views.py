@@ -1,14 +1,11 @@
 from django.shortcuts import render
 
+# isort: off
 from django.views.generic import (
-    View, 
-    TemplateView, 
-    ListView,
-    DetailView,
-    CreateView,
-    UpdateView,
-    DeleteView
+    TemplateView,
+    View,
 )
+
 
 def home(request):
     return render(request, "base.html")

@@ -1,14 +1,11 @@
 from django.shortcuts import render
-from django.views.generic import (
-    View, 
-    TemplateView, 
-    ListView,
-    DetailView,
-    CreateView,
-    UpdateView,
-    DeleteView
-)
+
+# isort: off
+from django.views.generic import ListView
+
 from apps.user_authentication.models import User
+
+
 # Create your views here.
 class UserListView(ListView):
     model = User
