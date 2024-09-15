@@ -172,3 +172,6 @@ cython_debug/
 #.idea/
 
 # End of https://www.toptal.com/developers/gitignore/api/django
+
+apps/digest_data/files/laws/*.html
+apps/digest_data/files/laws/*.pdf

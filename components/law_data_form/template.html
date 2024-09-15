@@ -1,0 +1,207 @@
+<div id="law-data-modal"
+     tabindex="-1"
+     aria-hidden="true"
+     class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full h-screen">
+    <div class="relative p-4 w-full max-w-lg md:max-w-2xl lg:max-w-3xl max-h-full">
+        <!-- Modal content -->
+        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+            <!-- Modal header -->
+            <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ modal_header }}</h3>
+                <button id="law-data-modal-close"
+                        type="button"
+                        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                    <svg class="w-3 h-3"
+                         aria-hidden="true"
+                         xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                    </svg>
+                    <span class="sr-only">Close modal</span>
+                </button>
+            </div>
+            <!-- Modal body -->
+            <form id="law-data-form"
+                  class="p-4 md:p-5"
+                  hx-post="{% url 'upsert-law' %}"
+                  hx-target="#table-content"
+                  hx-vals="js:{ limit: document.getElementById('pag-limit').value, page: document.getElementsByClassName('current-page')[0].text }"
+                  hx-encoding='multipart/form-data'>
+                {% csrf_token %}
+                <div class="grid gap-4 mb-4 grid-cols-2">
+                    <div class="col-span-2">
+                        <label for="law-title"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Law Title</label>
+                        <input type="text"
+                               name="title"
+                               id="law-title"
+                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                               placeholder="Type law title"
+                               required=""
+                               {% if law_data %}value="{{ law_data.metadata.title }}"{% endif %}>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label for="law-number"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Law Number</label>
+                        <input type="text"
+                               name="number"
+                               id="law-number"
+                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                               placeholder="Type law number"
+                               required=""
+                               {% if law_data %}value="{{ law_data.metadata.number }}"{% endif %}>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label for="status"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Status</label>
+                        <select id="status"
+                                name="status"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                            <!-- <option selected>Select status</option> -->
+                            {% for status in statuses %}
+                                <option value="{{ status }}"
+                                        {% if not law_data and forloop.first %} selected {% elif law_data %} {% if status == law_data.metadata.status %}selected{% endif %}
+                                        {% endif %}>{{ status }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label for="category"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Category</label>
+                        <select id="category"
+                                name="category"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                            <!-- <option selected>Select category</option> -->
+                            {% for category in categories %}
+                                <option value="{{ category }}"
+                                        {% if not law_data and forloop.first %} selected {% elif law_data %} {% if category == law_data.metadata.category %}selected{% endif %}
+                                        {% endif %}>{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label for="rank"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Rank</label>
+                        <select id="rank"
+                                name="rank"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                            <!-- <option selected>Select rank</option> -->
+                            {% for rank in ranks %}
+                                <option value="{{ rank }}"
+                                        {% if not law_data and forloop.first %} selected {% elif law_data %} {% if rank == law_data.metadata.rank %}selected{% endif %}
+                                        {% endif %}>{{ rank }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label for="category"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            Publication Date
+                        </label>
+                        <div class="relative max-w-sm">
+                            <div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400"
+                                     aria-hidden="true"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
+                                </svg>
+                            </div>
+                            <input name="publication_date"
+                                   datepicker
+                                   id="publication-datepicker"
+                                   type="text"
+                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                   placeholder="Select date"
+                                   {% if law_data %}value="{{ law_data.metadata.pulication_date }}"{% endif %}>
+                        </div>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label for="category"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            Approval Date
+                        </label>
+                        <div class="relative max-w-sm">
+                            <div class="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none">
+                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400"
+                                     aria-hidden="true"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
+                                </svg>
+                            </div>
+                            <input name="approval_date"
+                                   datepicker
+                                   id="approval-datepicker"
+                                   type="text"
+                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                   placeholder="Select date"
+                                   {% if law_data %}value="{{ law_data.metadata.approval_date }}"{% endif %}>
+                        </div>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label for="law_subject"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Law Subject</label>
+                        <select id="law_subject"
+                                name="law_subject"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                            <option selected>Select Law subject</option>
+                            {% for subject in subjects %}
+                                <option value="{{ subject }}"
+                                        {% if not law_data and forloop.first %} selected {% elif law_data %} {% if subject == law_data.metadata.subject %}selected{% endif %}
+                                        {% endif %}>{{ subject }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label for="related_subject"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            Related Subject
+                        </label>
+                        <select id="related_subject"
+                                name="related_subject"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                            <option selected>Select Related subject</option>
+                            {% for subject in subjects %}
+                                <option value="{{ subject }}"
+                                        {% if not law_data and forloop.first %} selected {% elif law_data %} {% if subject == law_data.metadata.subject %}selected{% endif %}
+                                        {% endif %}>{{ subject }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="law-title"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Law URL</label>
+                        <input type="text"
+                               name="url"
+                               id="law-title"
+                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                               placeholder="Type law title"
+                               required=""
+                               {% if law_data %}value="{{ law_data.metadata.url }}"{% endif %}>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="description"
+                               class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Law File</label>
+                        {% component 'dropzone_file_input' %}{% endcomponent %}
+                    </div>
+                </div>
+                <button id="law-data-modal-submit"
+                        type="submit"
+                        class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                    <svg class="me-1 -ms-1 w-5 h-5"
+                         fill="currentColor"
+                         viewBox="0 0 20 20"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd">
+                        </path>
+                    </svg>
+                    {{ confirm_botton_text }}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
