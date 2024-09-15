@@ -47,7 +47,6 @@ LOCAL_APPS = [
     "apps.user_authentication.apps.UserAuthenticationConfig",
     "apps.chats.apps.ChatsConfig",
     "apps.users.apps.UsersConfig",
-    "apps.embeddings_data.apps.EmbeddingsDataConfig",
     "apps.digest_data.apps.DigestDataConfig",
 ]
 

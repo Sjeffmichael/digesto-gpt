@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'on_premise_gpt.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "on_premise_gpt.settings")
 
 application = get_asgi_application()
