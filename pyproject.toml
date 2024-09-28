@@ -20,6 +20,8 @@ selenium = "^4.23.0"
 django-components = "^0.86"
 pre-commit = "^3.8.0"
 python-dotenv = "^1.0.1"
+channels = "^4.1.0"
+daphne = "^4.1.2"
 
 [build-system]
 requires = ["poetry-core"]

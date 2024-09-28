@@ -1,11 +1,9 @@
-from django.contrib.auth import login, logout, views as auth_views
+from django.contrib.auth import login, views as auth_views
 from django.http import HttpResponseRedirect
-from django.shortcuts import redirect, render
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
-from django.views.generic.edit import FormView
 
 from . import forms
 
@@ -14,7 +12,7 @@ from . import forms
 class LoginView(auth_views.LoginView):
     form_class = forms.LoginForm
     template_name = "user_authentication/login.html"
-    success_url = reverse_lazy("chats:index")
+    success_url = reverse_lazy("chats:chat-section")
 
     @method_decorator(never_cache)
     @method_decorator(csrf_protect)

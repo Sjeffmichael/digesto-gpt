@@ -150,3 +150,10 @@ python manage.py startcomponent component_name
 Para ejecutar este proyecto, agregar las siguientes variables de entorno al archivo .env
 
 `CHROMEDRIVER_FILES_PATH`
+
+
+## Tech Stack
+
+**Cliente:** [TailwindCSS](https://tailwindcss.com/docs/installation), [Flowbite](https://flowbite.com/docs/getting-started/introduction/), [HTMX](https://htmx.org/docs/), JavaScript
+
+**Servidor:** [Django](https://docs.djangoproject.com/en/5.1/), [django-components](https://github.com/EmilStenstrom/django-components/), [LangChain](https://python.langchain.com/v0.2/docs/integrations/platforms/), [Selenium](https://selenium-python.readthedocs.io/)

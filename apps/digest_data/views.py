@@ -40,6 +40,9 @@ class DigestDataCrud(View):
             int(request.GET.get("limit", "10")),
         )
 
+        if request.htmx:
+            self.template_name = "digest_data/digest_data_section.html"
+
         return render(request, self.template_name, context)
 
     def delete(self, request, *args, **kwargs):
