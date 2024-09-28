@@ -89,7 +89,8 @@ class ChatConsumer(WebsocketConsumer):
             token = words(1, common=False)
             tokens += token + " "
             template_p = render_to_string(
-                "chats/bot_message_token.html", {"id": "msg_id_" + id_, "token": token}
+                "chats/bot_message_token.html",
+                {"id": "msg_id_" + id_, "token": token + " "},
             )
             self.send(template_p)
 
