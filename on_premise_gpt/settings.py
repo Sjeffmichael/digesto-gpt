@@ -12,8 +12,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
-from django.contrib.messages import constants as messages
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -51,6 +49,7 @@ LOCAL_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "daphne",
     "django_browser_reload",
     "django_htmx",
     "widget_tweaks",
@@ -59,7 +58,7 @@ THIRD_PARTY_APPS = [
     "tailwind",
 ]
 
-INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_PARTY_APPS
+INSTALLED_APPS = THIRD_PARTY_APPS + BASE_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -89,6 +88,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.chats.context_processors.conversations_list",
             ],
             "loaders": [
                 (
@@ -107,7 +107,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "on_premise_gpt.wsgi.application"
+# WSGI_APPLICATION = "on_premise_gpt.wsgi.application"
+ASGI_APPLICATION = "on_premise_gpt.asgi.application"
 
 
 # Database
@@ -180,7 +181,7 @@ AUTH_USER_MODEL = "user_authentication.User"
 
 # login
 LOGIN_URL = "authentication:login"
-LOGIN_REDIRECT_URL = "chats:index"
+LOGIN_REDIRECT_URL = "chats:chat-section"
 LOGOUT_URL = "authentication:logout"
 LOGOUT_REDIRECT_URL = "authentication:login"
 

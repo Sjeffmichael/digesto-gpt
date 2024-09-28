@@ -1,0 +1,14 @@
+<ul id="dropdown-chats"
+    class="hidden py-2 space-y-2"
+    hx-swap-oob="afterbegin">
+    <li>
+        <a hx-get="{% url 'chats:conversation' slug %}"
+           hx-trigger="click"
+           hx-target="#page-content"
+           hx-swap="innerHTML"
+           hx-push-url="true"
+           class="cursor-pointer flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 truncate">
+            <span class="truncate">{{ title }}</span>
+        </a>
+    </li>
+</ul>

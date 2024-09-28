@@ -1,9 +1,18 @@
 from django.urls import path
 
-from .views import UserChats
+from .views import Chats, MessagesListView
 
 app_name = "chats"
 
 urlpatterns = [
-    path("", UserChats.as_view(), name="index"),
+    path(
+        "",
+        Chats.as_view(),
+        name="chat-section",
+    ),
+    path(
+        "<str:slug>",
+        MessagesListView.as_view(),
+        name="conversation",
+    ),
 ]
