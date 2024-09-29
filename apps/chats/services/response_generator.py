@@ -1,7 +1,8 @@
 import os
 
 from dotenv import load_dotenv
-from langchain.prompts import PromptTemplate
+from langchain.prompts import ChatPromptTemplate, PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv()
@@ -27,7 +28,10 @@ class ResponseGenerator:
         Genera un título corto para un chat basandote en el siguiente mensaje.
         Mensaje: {message}
         """
-        prompt = PromptTemplate.from_template(template)
-        prompt.invoke({"message": input_message})
-        print(prompt)
-        return self.llm.invoke(prompt.template).content
+        prompt = ChatPromptTemplate.from_template(template)
+        llm_chain = prompt | self.llm | StrOutputParser()
+        return llm_chain.invoke(
+            {
+                "message": input_message,
+            }
+        )

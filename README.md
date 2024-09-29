@@ -15,11 +15,11 @@ pipx ensurepath
 Instalar el gestor de dependencias [Poetry](https://python-poetry.org/docs/#installation)
 ```bash
 pipx install poetry
+source ~/.bashrc
 ```
 
 Activar entorno virtual
 ```bash
-cd on-premise-gpt
 poetry shell
 ```
 
@@ -29,22 +29,32 @@ poetry install
 ```
 ## Ejecutar Localmente
 
-Ir al repositorio del proyecto
+
+
+Crea un API KEY de Google Gemini en el siguiente enlace: https://aistudio.google.com/
+
+Crear un archivo .env con las siguientes variables de entorno
+
+`CHROMEDRIVER_FILES_PATH`
+
+`GEMINI_API_KEY`
+
+Instalar dependencias de Tailwind CSS
 
 ```bash
-cd on-premise-gpt
-```
-
-Iniciar el servidor
-
-```bash
-python manage.py runserver
+python manage.py tailwind install
 ```
 
 Iniciar el servidor de Tailwind CSS
 
 ```bash
 python manage.py tailwind start
+```
+
+Iniciar el servidor
+
+```bash
+python manage.py runserver
 ```
 
 ## Commits
@@ -143,14 +153,6 @@ Ejecutar el siguiente comando para crear un componente utilizando [django-compon
 ```bash
 python manage.py startcomponent component_name
 ```
-
-
-## Environment Variables
-
-Para ejecutar este proyecto, agregar las siguientes variables de entorno al archivo .env
-
-`CHROMEDRIVER_FILES_PATH`
-
 
 ## Tech Stack
 

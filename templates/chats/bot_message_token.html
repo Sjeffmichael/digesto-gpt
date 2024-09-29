@@ -1,1 +1,2 @@
-<div id="{{ id }}" hx-swap-oob="beforeend">{{ token }}</div>
+{% load chats_custom_filters %}
+<div id="{{ id }}" hx-swap-oob="innerHTML">{{ token|render_markdown }}</div>
