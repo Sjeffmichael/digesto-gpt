@@ -16,9 +16,13 @@ from django.utils.lorem_ipsum import words
 from apps.user_authentication.models import User
 
 from .models import Conversation, Message
+from .services.response_generator import ResponseGenerator
 
 
 class ChatConsumer(WebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.response_generator = ResponseGenerator()
 
     def connect(self):
         self.accept()
@@ -36,13 +40,10 @@ class ChatConsumer(WebsocketConsumer):
             # create new conversation
             id_ = uuid.uuid4().hex
             user = User.objects.get(email=email)
-            conversation_title = words(
-                randrange(
-                    4,
-                    10,
-                ),  # nosec B311
-                common=False,
+            conversation_title = self.response_generator.generate_title(
+                message,
             )
+
             conversation = Conversation.objects.create(
                 slug=id_,
                 user=user,
@@ -84,13 +85,11 @@ class ChatConsumer(WebsocketConsumer):
         self.send(user_message_html)
         tokens = ""
 
-        for _ in range(randrange(15, 25)):  # nosec B311
-            sleep(0.03)
-            token = words(1, common=False)
-            tokens += token + " "
+        for token in self.response_generator.generate_response(message):
+            tokens += token.content
             template_p = render_to_string(
                 "chats/bot_message_token.html",
-                {"id": "msg_id_" + id_, "token": token + " "},
+                {"id": "msg_id_" + id_, "token": token.content},
             )
             self.send(template_p)
 

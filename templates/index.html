@@ -1,5 +1,6 @@
 {% extends "./base.html" %}
 {% load static %}
+{% load chats_custom_filters %}
 {% block title %}
     Digesto GPT Index
 {% endblock title %}
@@ -125,7 +126,7 @@
                                        hx-swap="innerHTML"
                                        hx-push-url="true"
                                        class="cursor-pointer flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
-                                        <span class="truncate">{{ conversation.title }}</span>
+                                        <span class="truncate">{{ conversation.title|render_markdown }}</span>
                                     </a>
                                 </li>
                             {% endfor %}
