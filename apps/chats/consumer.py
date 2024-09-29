@@ -1,8 +1,6 @@
 import asyncio
 import json
 import uuid
-from random import randrange
-from time import sleep
 from urllib.parse import urlparse
 
 # isort: off
@@ -89,7 +87,7 @@ class ChatConsumer(WebsocketConsumer):
             tokens += token.content
             template_p = render_to_string(
                 "chats/bot_message_token.html",
-                {"id": "msg_id_" + id_, "token": token.content},
+                {"id": "msg_id_" + id_, "token": tokens},
             )
             self.send(template_p)
 
