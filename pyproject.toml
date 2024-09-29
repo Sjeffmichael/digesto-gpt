@@ -21,10 +21,9 @@ pre-commit = "^3.8.0"
 python-dotenv = "^1.0.1"
 channels = "^4.1.0"
 daphne = "^4.1.2"
-langchain = "^0.3.1"
-langchain-core = "^0.3.6"
-langchain-google-genai = "^2.0.0"
 markdown = "^3.7"
+ragas = "^0.1.20"
+langchain-google-genai = "1.0.10"
 
 [build-system]
 requires = ["poetry-core"]
