@@ -51,21 +51,54 @@ class LawMetadata(BaseModel):
     )
 
 
+class UserMetadata(BaseModel):
+    name: str = Field(serialization_alias="user-name",alias="user-name",)
+
+    firstname: str = Field(serialization_alias="user-first-name", alias="user-first-name")
+    
+    lastname: str = Field(serialization_alias="user-last_name", alias="user-last_name")
+    
+    email: str = Field(serialization_alias="user-email", alias="user-email")
+    
+    administrator: str = Field(serialization_alias="admin", alias="admin")
+
+    password: str = Field(serialization_alias="user-password", alias="user-password")
+    
+    confirmpassword: str = Field(serialization_alias="user-password-confirm", alias="user-password-confirm")
+
+    #creation_date: str = Field(serialization_alias="fecha_creacion", alias="fecha_creacion")
+
 class LawData(BaseModel):
     id: str
     filename: str
     metadata: LawMetadata
 
+class UserData(BaseModel):
+    id: str
+    metadata: UserMetadata
 
 class LawDataFormContext(BaseModel):
     modal_header: str
     confirm_botton_text: str
     csrf_token: str
     statuses: list[str]
+    administrator: list[str]
     categories: list[str]
     ranks: list[str]
     subjects: list[str]
     law_data: Optional[LawData] = Field(default=None)
+
+
+class UserDataFormContext(BaseModel):
+    modal_header: str
+    confirm_botton_text: str
+    csrf_token: str
+    statuses: list[str]
+    administrator: list[str]
+    categories: list[str]
+    ranks: list[str]
+    subjects: list[str]
+    user_data: Optional[UserData] = Field(default=None)
 
 
 class LawDataTable(BaseModel):
@@ -84,6 +117,11 @@ statuses = [
     "Derogación Tácita",
     "Plazo Vencido",
     "Instrumento Internacional",
+]
+
+administrator = [
+    "Yes",
+    "No",
 ]
 
 categories = [
