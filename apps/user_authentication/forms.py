@@ -1,4 +1,5 @@
 from django.contrib.auth.forms import AuthenticationForm
+from django.utils.translation import gettext_lazy as _
 
 from . import models
 
@@ -12,8 +13,8 @@ class LoginForm(AuthenticationForm):
             "dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 "
             "dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         )
-        self.fields["username"].widget.attrs["placeholder"] = "Email"
-        self.fields["password"].widget.attrs["placeholder"] = "Password"
+        self.fields["username"].widget.attrs["placeholder"] = _("Email")
+        self.fields["password"].widget.attrs["placeholder"] = _("Password")
         self.fields["username"].widget.attrs["class"] = common_class
         self.fields["password"].widget.attrs["class"] = common_class
 

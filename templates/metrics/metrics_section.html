@@ -1,0 +1,176 @@
+{% load l10n %}
+<section id="law-section"
+         class="fixed top-0 left-0 right-0 bottom-0 sm:ml-64 mt-14 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 pt-4 pl-4 pr-4">
+        <button id="dateRangeButton"
+                data-dropdown-toggle="dateRangeDropdown"
+                data-dropdown-ignore-click-outside-class="datepicker"
+                type="button"
+                class="inline-flex items-center text-blue-700 dark:text-blue-600 font-medium hover:underline">
+            {{ start_date|date:'d/m/Y' }}
+            <p class="ms-1">- {{ end_date|date:'d/m/Y' }}</p>
+            <svg class="w-3 h-3 ms-2"
+                 aria-hidden="true"
+                 xmlns="http://www.w3.org/2000/svg"
+                 fill="none"
+                 viewBox="0 0 10 6">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
+            </svg>
+        </button>
+        <div id="dateRangeDropdown"
+             class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-80 lg:w-96 dark:bg-gray-700 dark:divide-gray-600">
+            <div class="p-3" aria-labelledby="dateRangeButton">
+                <div date-rangepicker
+                     datepicker-format="dd/mm/yyyy"
+                     datepicker-max-date="{{ date_options.today|date:'d/m/Y' }}"
+                     datepicker-autohide
+                     class="flex items-center"
+                     hx-get="{% url 'metrics-section' %}"
+                     hx-vals="js:{start_date: document.getElementById('start-date-input').value, end_date: document.getElementById('end-date-input').value}"
+                     hx-trigger="change changed, changeDate from:input"
+                     hx-target="#page-content"
+                     hx-swap="innerHTML"
+                     hx-indicator="#indicator"
+                     hx-push-url="true">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400"
+                                 aria-hidden="true"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="currentColor"
+                                 viewBox="0 0 20 20">
+                                <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
+                            </svg>
+                        </div>
+                        <input id="start-date-input"
+                               type="text"
+                               value="{{ start_date|date:'d/m/Y' }}"
+                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                               placeholder="Start date"
+                               type="text">
+                    </div>
+                    <span class="mx-2 text-gray-500 dark:text-gray-400">to</span>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400"
+                                 aria-hidden="true"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="currentColor"
+                                 viewBox="0 0 20 20">
+                                <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
+                            </svg>
+                        </div>
+                        <input id="end-date-input"
+                               value="{{ end_date|date:'d/m/Y' }}"
+                               type="text"
+                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                               placeholder="End date">
+                    </div>
+                </div>
+                <div class="z-50 mt-4 text-base list-none bg-white divide-y divide-gray-100 rounded dark:bg-gray-700 dark:divide-gray-600">
+                    <ul role="none">
+                        <li>
+                            <a hx-get="{% url 'metrics-section' %}"
+                               hx-vals="js:{ start_date: '{{ date_options.today|date:'d/m/Y' }}', end_date: '{{ date_options.today|date:'d/m/Y' }}' } "
+                               hx-trigger="click"
+                               hx-target="#page-content"
+                               hx-swap="innerHTML"
+                               hx-indicator="#indicator"
+                               hx-push-url="true"
+                               class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white"
+                               role="menuitem">Today</a>
+                        </li>
+                        <li>
+                            <a hx-get="{% url 'metrics-section' %}"
+                               hx-vals="js:{ start_date: '{{ date_options.yesterday|date:'d/m/Y' }}', end_date: '{{ date_options.yesterday|date:'d/m/Y' }}' } "
+                               hx-trigger="click"
+                               hx-target="#page-content"
+                               hx-swap="innerHTML"
+                               hx-indicator="#indicator"
+                               hx-push-url="true"
+                               class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white"
+                               role="menuitem">Yesterday</a>
+                        </li>
+                        <li>
+                            <a hx-get="{% url 'metrics-section' %}"
+                               hx-vals="js:{ start_date: '{{ date_options.last_seven_days|date:'d/m/Y' }}', end_date: '{{ date_options.today|date:'d/m/Y' }}' } "
+                               hx-trigger="click"
+                               hx-target="#page-content"
+                               hx-swap="innerHTML"
+                               hx-indicator="#indicator"
+                               hx-push-url="true"
+                               class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white"
+                               role="menuitem">Last 7 days</a>
+                        </li>
+                        <li>
+                            <a hx-get="{% url 'metrics-section' %}"
+                               hx-vals="js:{ start_date: '{{ date_options.last_thirty_days|date:'d/m/Y' }}', end_date: '{{ date_options.today|date:'d/m/Y' }}' } "
+                               hx-trigger="click"
+                               hx-target="#page-content"
+                               hx-swap="innerHTML"
+                               hx-indicator="#indicator"
+                               hx-push-url="true"
+                               class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white"
+                               role="menuitem">Last 30 days</a>
+                        </li>
+                        <li>
+                            <a hx-get="{% url 'metrics-section' %}"
+                               hx-vals="js:{ start_date: '{{ date_options.last_ninety_days|date:'d/m/Y' }}', end_date: '{{ date_options.today|date:'d/m/Y' }}' } "
+                               hx-trigger="click"
+                               hx-target="#page-content"
+                               hx-swap="innerHTML"
+                               hx-indicator="#indicator"
+                               hx-push-url="true"
+                               class="cursor-pointer block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white"
+                               role="menuitem">Last 90 days</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="px-4 pt-6 pb-6">
+        {% component 'generation_metrics_chart' total_answers=metrics_counts.total_answers %}{% endcomponent %}
+        <div class="grid w-full grid-cols-1 gap-4 mt-4 xl:grid-cols-2 2xl:grid-cols-3">
+            {% component 'coherence_metric_chart' %}{% endcomponent %}
+            {% component 'correctness_metric_chart' %}{% endcomponent %}
+            {% component 'conciseness_metric_chart' %}{% endcomponent %}
+        </div>
+    </div>
+    <script type="module">
+            {% localize off %}
+               const faithfulnessData = [
+                  {% for data in generation_metrics %}
+                     {y: {{ data.faithfulness }}, x: new Date('{{ data.created_date|date:"Y/m/d H:i:s" }}').getTime()},
+                  {% endfor %}
+               ]
+               const answerRelevancyData = [
+                  {% for data in generation_metrics %}
+                     {y: {{ data.answer_relevancy }}, x: new Date('{{ data.created_date|date:"Y/m/d H:i:s" }}').getTime()},
+                  {% endfor %}
+               ]
+               const contextUtilizationData = [
+                  {% for data in generation_metrics %}
+                     {y: {{ data.context_utilization }}, x: new Date('{{ data.created_date|date:"Y/m/d H:i:s" }}').getTime()},
+                  {% endfor %}
+               ]
+               const coherenceData = [
+                  {{ metrics_counts.coherent_count_metric }},
+                  {{ metrics_counts.incoherent_count_metric }}
+               ]
+               const correcnessData = [
+                  {{ metrics_counts.correct_count_metric }},
+                  {{ metrics_counts.incorrect_count_metric }}
+               ]
+               const concisenessData = [
+                  {{ metrics_counts.consistent_count_metric }},
+                  {{ metrics_counts.inconsistent_count_metric }}
+               ]
+            {% endlocalize %}
+
+            generation_metrics_chart(faithfulnessData, answerRelevancyData, contextUtilizationData)
+            coherence_metric_chart(coherenceData)
+            correctness_metric_chart(correcnessData)
+            critique_metric_chart(concisenessData)
+    </script>
+</section>

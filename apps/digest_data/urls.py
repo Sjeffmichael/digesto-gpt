@@ -1,4 +1,5 @@
 from django.urls import path, re_path
+from django.utils.translation import gettext_lazy as _
 
 from .views import DigestDataCrud, DigestDataForm
 
@@ -26,16 +27,16 @@ urlpatterns = [
     path(
         "upsert-form",
         DigestDataForm.as_view(
-            modal_header="Create New Law",
-            confirm_botton_text="Create Law",
+            modal_header=_("Create Law"),
+            confirm_botton_text=_("Create Law"),
         ),
         name="create-law-form",
     ),
     path(
         "upsert-form/<str:id>",
         DigestDataForm.as_view(
-            modal_header="Update Law",
-            confirm_botton_text="Update Law",
+            modal_header=_("Update Law"),
+            confirm_botton_text=_("Update Law"),
         ),
         name="update-law-form",
     ),

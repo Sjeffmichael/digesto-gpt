@@ -70,6 +70,16 @@
         <div id="{{ id }}"
              class="text-sm font-normal py-2.5 text-gray-900 dark:text-white">
             {{ message.bot_message|render_markdown }}
+            <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
+                {% for url in message.references|str_to_list %}
+                    <li>
+                        <a href="{{ url }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="text-blue-700 dark:text-blue-500 underline hover:no-underline font-medium break-all">{{ url }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
     <button id="dropdownMenuIconButton"

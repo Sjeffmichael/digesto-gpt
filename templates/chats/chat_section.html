@@ -1,3 +1,4 @@
+{% load i18n %}
 <section id="law-section"
          class="fixed top-0 left-0 right-0 bottom-0 sm:ml-64 mt-14 bg-gray-50 dark:bg-gray-900 flex flex-col">
     <div class="flex-grow flex flex-col" hx-ext="ws" ws-connect="/ws/chat/">
@@ -7,16 +8,18 @@
                 {% include "chats/message_item.html" %}
             {% endfor %}
         </div>
-        <form ws-send>
-            <label for="chat" class="sr-only">Your message</label>
+        <form id="chat-form" ws-send>
+            <label for="chat-textarea" class="sr-only">Your message</label>
             <div class="flex items-center px-3 py-2  bg-gray-50 dark:bg-gray-700">
-                <textarea name="message"
-                          id="chat"
-                          rows="1"
-                          class="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                          placeholder="Your message..."></textarea>
+                <input name="message"
+                       id="chat-textarea"
+                       type="text"
+                       rows="1"
+                       class="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                       placeholder="{% trans "Write a query..." %}" />
                 <button type="submit"
-                        class="inline-flex justify-center p-2 text-blue-600 rounded-full cursor-pointer hover:bg-blue-100 dark:text-blue-500 dark:hover:bg-gray-600">
+                        class="inline-flex justify-center p-2 text-blue-600 rounded-full cursor-pointer hover:bg-blue-100 dark:text-blue-500 dark:hover:bg-gray-600"
+                        onclick="removeSidebarHighlightButton()">
                     <svg class="w-5 h-5 rotate-90 rtl:-rotate-90"
                          aria-hidden="true"
                          xmlns="http://www.w3.org/2000/svg"
@@ -29,4 +32,25 @@
             </div>
         </form>
     </div>
+    <script>
+        function scrollToBottom() {
+            const messagesListDiv = document.getElementById("message-list")
+
+            if (messagesListDiv) {
+                requestAnimationFrame(() => {
+                    messagesListDiv.scrollTop = messagesListDiv.scrollHeight;
+                });
+            }
+        }
+        // scroll to bottom when reloading page
+        window.addEventListener("DOMContentLoaded", scrollToBottom)
+        // scroll to bottom after out of band swap
+        window.addEventListener("htmx:oobAfterSwap", scrollToBottom)
+        // scroll to bottom after swap
+        window.addEventListener("htmx:afterSwap", scrollToBottom)
+        // reset input after sending message
+        document.getElementById("chat-form").addEventListener("htmx:wsAfterSend", function (event) {
+            this.reset();
+        });
+    </script>
 </section>

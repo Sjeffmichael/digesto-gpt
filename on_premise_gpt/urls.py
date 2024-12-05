@@ -19,6 +19,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from django.views.decorators.cache import cache_page
+from django.views.i18n import JavaScriptCatalog
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -27,4 +29,7 @@ urlpatterns = [
     path("", include("apps.chats.urls")),
     path("users/", include("apps.users.urls")),
     path("laws/", include("apps.digest_data.urls")),
+    path("metrics/", include("apps.metrics.urls")),
+    path("i18n/", include("django.conf.urls.i18n")),
+    path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
