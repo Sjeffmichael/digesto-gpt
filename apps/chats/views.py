@@ -1,22 +1,22 @@
 from typing import Any
 
-from django.db.models.query import QuerySet
-from django.shortcuts import render
-
 # isort: off
+from django.shortcuts import render
 from .models import Conversation, Message
 from django.views.generic import (
     TemplateView,
     View,
     ListView,
 )
+from django.http import Http404, QueryDict
+from common.util.locale import is_language_switcher_request
 
 
 class Chats(View):
 
     def get(self, request, *args, **kwargs):
         context = {}
-        if request.htmx:
+        if request.htmx and not is_language_switcher_request(request):
             template_name = "chats/chat_section.html"
         else:
             template_name = "chats/chat_full.html"
@@ -37,7 +37,8 @@ class MessagesListView(ListView):
         return conversations
 
     def get_template_names(self) -> list[str]:
-        if self.request.htmx:
+
+        if self.request.htmx and not is_language_switcher_request(self.request):
             self.template_name = "chats/chat_section.html"
         else:
             self.template_name = "chats/chat_full.html"

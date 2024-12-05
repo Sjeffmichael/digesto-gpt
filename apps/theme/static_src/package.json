@@ -28,6 +28,8 @@
     "tailwindcss": "^3.3.2"
   },
   "dependencies": {
-    "flowbite": "^2.2.1"
+    "apexcharts": "^3.54.0",
+    "flowbite": "^2.5.2",
+    "idiomorph": "^0.3.0"
   }
 }

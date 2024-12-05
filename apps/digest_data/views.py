@@ -8,6 +8,7 @@ from django.db.models.query import QuerySet
 from django.http import Http404, QueryDict
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, render
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
 from apps.digest_data.models import Law
@@ -24,6 +25,7 @@ from apps.digest_data.pydantic_models import (
     subjects,
 )
 from components.law_data_form.law_data_form import LawDataForm
+from common.util.locale import is_language_switcher_request
 
 
 class DigestDataCrud(View):
@@ -40,7 +42,7 @@ class DigestDataCrud(View):
             int(request.GET.get("limit", "10")),
         )
 
-        if request.htmx:
+        if request.htmx and not is_language_switcher_request(request):
             self.template_name = "digest_data/digest_data_section.html"
 
         return render(request, self.template_name, context)
@@ -198,10 +200,12 @@ class DigestDataForm(View):
                 metadata=LawMetadata(**queryset.metadata),
             )
 
+        print(type(self.modal_header), type(self.confirm_botton_text))
+
         context = LawDataFormContext(
-            modal_header=self.modal_header,
+            modal_header=str(self.modal_header),
             csrf_token=csrf_token,
-            confirm_botton_text=self.confirm_botton_text,
+            confirm_botton_text=str(self.confirm_botton_text),
             statuses=statuses,
             categories=categories,
             ranks=ranks,

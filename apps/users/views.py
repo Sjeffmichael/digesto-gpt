@@ -7,6 +7,7 @@ from django.shortcuts import render
 from django.views.generic import ListView
 
 from apps.user_authentication.models import User
+from common.util.locale import is_language_switcher_request
 
 
 # Create your views here.
@@ -21,7 +22,7 @@ class UserListView(ListView):
     def render_to_response(
         self, context: dict[str, Any], **response_kwargs: Any
     ) -> HttpResponse:
-        if self.request.htmx:
+        if self.request.htmx and not is_language_switcher_request(self.request):
             template_name = "users/users_section.html"
         else:
             template_name = "users/users_full.html"

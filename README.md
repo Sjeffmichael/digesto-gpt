@@ -27,8 +27,20 @@ Instalar dependencias
 ```bash
 poetry install
 ```
-## Ejecutar Localmente
 
+Instalar Milvus DB
+```bash
+$ curl -sfL https://raw.githubusercontent.com/milvus-io/milvus/master/scripts/standalone_embed.sh -o standalone_embed.sh
+```
+
+Iniciar Contenedor de Docker
+```bash
+$ bash standalone_embed.sh start
+```
+
+
+
+## Ejecutar Localmente
 
 
 Crea un API KEY de Google Gemini en el siguiente enlace: https://aistudio.google.com/
@@ -51,11 +63,21 @@ Iniciar el servidor de Tailwind CSS
 python manage.py tailwind start
 ```
 
-Iniciar el servidor
+Iniciar el servidor de Django
 
 ```bash
 python manage.py runserver
 ```
+
+Iniciar el servidor de FastAPI
+```bash
+cd fastapi_services
+```
+
+```bash
+uvicorn embedding_service:app --reload --port 8080
+```
+
 
 ## Commits
 
@@ -153,6 +175,25 @@ Ejecutar el siguiente comando para crear un componente utilizando [django-compon
 ```bash
 python manage.py startcomponent component_name
 ```
+
+### Traducciones
+
+Ejecutar el siguiente comando para preparar las traducciones en los archivos JavaScript
+```bash
+django-admin makemessages --all --ignore=env --extension=js --domain=djangojs  --ignore=apps/theme
+```
+
+Ejecutar el siguiente comando para preparar las traducciones en los archivos HTML
+```bash
+django-admin makemessages --all --ignore=env
+```
+
+Ejecutar el siguiente comando para compilar las traducciones
+```bash
+django-admin compilemessages --ignore=env
+```
+
+**Estos comandos se ejecutan cada que se inicia el proyecto de Django**
 
 ## Tech Stack
 

@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -46,6 +49,7 @@ LOCAL_APPS = [
     "apps.chats.apps.ChatsConfig",
     "apps.users.apps.UsersConfig",
     "apps.digest_data.apps.DigestDataConfig",
+    "apps.metrics.apps.MetricsConfig",
 ]
 
 THIRD_PARTY_APPS = [
@@ -63,6 +67,8 @@ INSTALLED_APPS = THIRD_PARTY_APPS + BASE_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -70,7 +76,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_browser_reload.middleware.BrowserReloadMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "middleware.middleware.HtmxMessagesMiddleware",
     "django_components.middleware.ComponentDependencyMiddleware",
@@ -89,6 +94,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.chats.context_processors.conversations_list",
+                "common.util.context_processors.current_section",
             ],
             "loaders": [
                 (
@@ -146,7 +152,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "es"
 
 TIME_ZONE = "UTC"
 
@@ -154,11 +160,19 @@ USE_I18N = True
 
 USE_TZ = True
 
+LANGUAGES = (("en", _("English")), ("es", _("Spanish")))
+
+LOCALE_PATHS = [os.path.join(BASE_DIR, "locale")]
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATICFILES_DIRS = [BASE_DIR / "static", BASE_DIR / "components"]
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+    BASE_DIR / "components",
+    BASE_DIR / "apps/theme/static_src/node_modules",
+]
 
 STATIC_URL = "static/"
 
