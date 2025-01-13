@@ -63,7 +63,6 @@ class ChatConsumer(WebsocketConsumer):
             conversation = Conversation.objects.get(
                 slug=parsed_url.path.replace("/", "")
             )
-            pass
 
         created_messages = Message.objects.create(
             conversation=conversation,
@@ -83,13 +82,28 @@ class ChatConsumer(WebsocketConsumer):
         self.send(user_message_html)
         tokens = ""
 
-        for token in self.response_generator.generate_response(message):
-            tokens += token.content
-            template_p = render_to_string(
-                "chats/bot_message_token.html",
-                {"id": "msg_id_" + id_, "token": tokens},
-            )
-            self.send(template_p)
+        references_url = ""
+
+        for chunk in self.response_generator.generate_response(
+            message, created_messages.id
+        ):
+            token = json.loads(chunk)
+            if token.get("answer"):
+                tokens += token.get("answer")
+                template_p = render_to_string(
+                    "chats/bot_message_token.html",
+                    {"id": "msg_id_" + id_, "token": tokens},
+                )
+                self.send(template_p)
+            elif token.get("references_url"):
+                references_list = token.get("references_url")
+                references_url = render_to_string(
+                    "chats/references_url_list.html",
+                    {"id": "msg_id_" + id_, "urls": references_list},
+                )
+
+        self.send(references_url)
 
         created_messages.bot_message = tokens
+        created_messages.references = str(references_list)
         created_messages.save()

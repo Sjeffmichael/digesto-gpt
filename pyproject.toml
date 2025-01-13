@@ -24,6 +24,11 @@ daphne = "^4.1.2"
 markdown = "^3.7"
 ragas = "^0.1.20"
 langchain-google-genai = "1.0.10"
+langchain-huggingface = "0.0.3"
+pymilvus = "^2.4.7"
+fastapi = "^0.115.0"
+uvicorn = "^0.31.0"
+grandalf = "^0.8"
 
 [build-system]
 requires = ["poetry-core"]
