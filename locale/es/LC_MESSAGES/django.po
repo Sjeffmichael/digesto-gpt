@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-05 04:42+0000\n"
+"POT-Creation-Date: 2025-01-13 02:36+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: apps/digest_data/urls.py:30 apps/digest_data/urls.py:31
+#: apps/digest_data/urls.py:50 apps/digest_data/urls.py:51
 msgid "Create Law"
 msgstr "Crear Ley"
 
-#: apps/digest_data/urls.py:38 apps/digest_data/urls.py:39
+#: apps/digest_data/urls.py:66 apps/digest_data/urls.py:67
 msgid "Update Law"
 msgstr "Actualizar Ley"
 
