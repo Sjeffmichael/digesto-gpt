@@ -8,10 +8,10 @@ from django.db.models.query import QuerySet
 from django.http import Http404, QueryDict
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, render
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
 from apps.digest_data.models import Law
-from apps.digest_data.models import User
 
 # isort: off
 from apps.digest_data.pydantic_models import (
@@ -19,17 +19,14 @@ from apps.digest_data.pydantic_models import (
     LawDataFormContext,
     LawDataTable,
     LawMetadata,
-    UserDataFormContext,
-    UserData,
-    UserMetadata,
     categories,
     ranks,
     statuses,
     subjects,
-    administrator,
 )
 from components.law_data_form.law_data_form import LawDataForm
-from components.user_data_form.user_data_form import UserDataForm
+from common.util.locale import is_language_switcher_request
+
 
 class DigestDataCrud(View):
     template_name = ""
@@ -45,7 +42,7 @@ class DigestDataCrud(View):
             int(request.GET.get("limit", "10")),
         )
 
-        if request.htmx:
+        if request.htmx and not is_language_switcher_request(request):
             self.template_name = "digest_data/digest_data_section.html"
 
         return render(request, self.template_name, context)
@@ -164,7 +161,6 @@ class DigestDataCrud(View):
             "categories": categories,
             "ranks": ranks,
             "subjects": subjects,
-            "administrator": administrator,
         }
 
         return context
@@ -204,105 +200,17 @@ class DigestDataForm(View):
                 metadata=LawMetadata(**queryset.metadata),
             )
 
+        print(type(self.modal_header), type(self.confirm_botton_text))
+
         context = LawDataFormContext(
-            modal_header=self.modal_header,
+            modal_header=str(self.modal_header),
             csrf_token=csrf_token,
-            confirm_botton_text=self.confirm_botton_text,
+            confirm_botton_text=str(self.confirm_botton_text),
             statuses=statuses,
             categories=categories,
             ranks=ranks,
             subjects=subjects,
             law_data=law_data,
-            administrator=administrator,
-        )
-
-        return context
-
-class DigestUserDataForm(View):
-    template_name = 'user_data_form/template.html'
-    modal_header = ""
-    confirm_botton_text = ""
-
-    def get(self, request, id=None):
-        queryset = None
-        if id is not None:
-            queryset = self.get_queryset(id)
-
-        context = self.get_context_data(queryset, request)
-
-        return UserDataForm.render_to_response(kwargs={"data_context": context})
-
-    def post(self, request, id=None, *args, **kwargs):
-        body_data = {key: value[0] for key, value in request.POST.lists()}
-        print(body_data)
-        if id is not None:
-            try:
-                user_data = UserData(
-                    id=id,
-                    metadata=UserMetadata.model_construct(
-                        **body_data,
-                    ),
-                )
-                User.objects.filter(id=user_data.id).update(
-                    metadata=user_data.metadata.model_dump(
-                        by_alias=True, exclude_none=True
-                    ),
-                )
-                add_message(request, messages.ERROR, "User updated successfully")
-            except Exception as e:
-                add_message(request, messages.ERROR, "Error updating user")
-        else:
-            try:
-                user_data = UserData(
-                    id=str(uuid.uuid4()),
-                    metadata=UserMetadata.model_construct(
-                        **body_data,
-                    ),
-                )
-                new_user = User(
-                    id=user_data.id,
-                    metadata=user_data.metadata.model_dump(
-                        by_alias=True, exclude_none=True
-                    ),
-                )
-                new_user.save()
-                add_message(request, messages.SUCCESS, "User created successfully")
-            except Exception as e:
-                add_message(request, messages.ERROR, f"Error: {str(e)}")
-
-        query_set = self.get_queryset()
-        context = self.get_context_data(
-            query_set,
-            int(body_data.get("page", "1")),
-            int(body_data.get("limit", "10")),
-        )
-
-        return render(request, self.template_name, context)
-
-    def get_queryset(self, id):
-        user = User.objects.get(pk=id)
-        return user
-
-    def get_context_data(self, queryset: User, request):
-        csrf_token = get_token(request)
-        user_data = None
-        if queryset is not None:
-            user_data = UserData(
-                id=queryset.id,
-                filename=queryset.filename,
-                metadata=UserMetadata(**queryset.metadata),
-            )
-
-        context = UserDataFormContext(
-            modal_header=self.modal_header,
-            csrf_token=csrf_token,
-            confirm_botton_text=self.confirm_botton_text,
-            statuses=statuses,
-            categories=categories,
-            ranks=ranks,
-            subjects=subjects,
-            user_data=user_data,
-            administrator=administrator,
         )
 
         return context

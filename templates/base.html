@@ -16,44 +16,68 @@
         {% component_css_dependencies %}
         <script src="{% static 'js/htmx/htmx.min.js' %}"></script>
         <script src="{% static 'js/htmx/ws.min.js' %}"></script>
+        <script src="{% url 'javascript-catalog' %}"></script>
     </head>
     <body hx-headers="{'X-CSRFToken': '{{ csrf_token }}'}"
-          class="dark:bg-gray-900">
+          class="dark:bg-gray-900"
+          hx-history-elt>
         {% block content %}
         {% endblock content %}
         <script>
-      document.body.addEventListener('htmx:afterSwap', (event) => {
-        // Reinitialize Flowbite after swapping an element
-        window.initFlowbite();
-      });
-      document.body.addEventListener('htmx:historyRestore', function(evt) {
+          document.body.addEventListener('htmx:afterSwap', (event) => {
+            // Reinitialize Flowbite after swapping an element
+            window.initFlowbite();
+          });
+          document.body.addEventListener('htmx:historyRestore', function(evt) {
             // Reinitialize Flowbite when using back/forward navigation
             window.initFlowbite();
-      });
-      document.body.addEventListener('htmx:wsBeforeMessage', function(event) {
-            // Reinitialize Flowbite when using back/forward navigation
-        try {
-        // Try to parse the string into a JSON object
-          const parsedJson = JSON.parse(event.detail.message);
+          });
+          document.body.addEventListener('htmx:wsBeforeMessage', function(event) {
+                // Reinitialize Flowbite when using back/forward navigation
+            try {
+            // Try to parse the string into a JSON object
+              const parsedJson = JSON.parse(event.detail.message);
 
-        // Check if the key exists in the parsed JSON object
-            if ("Hx-New-URL" in parsedJson) {
-                // htmx.trigger()
-                const url = new URL(parsedJson["Hx-New-URL"])
-                console.log(url)
-                history.pushState({}, "", url) ;
-            } else {
-                return false;  // JSON is valid, but does not contain the key
+            // Check if the key exists in the parsed JSON object
+                if ("Hx-New-URL" in parsedJson) {
+                    // htmx.trigger()
+                    const url = new URL(parsedJson["Hx-New-URL"])
+                    history.pushState({}, "", url) ;
+                } else {
+                    return false;  // JSON is valid, but does not contain the key
+                }
+            } catch (error) {
+                // If an error occurs, it's not a valid JSON
+                return false;
             }
-        } catch (error) {
-            // If an error occurs, it's not a valid JSON
-            return false;
-        }
 
-      });
+          });
         </script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js"></script>
+        <script>
+          function removeSidebarHighlightButton() {
+            document.querySelectorAll('#logo-sidebar > div > ul .bg-gray-100, #logo-sidebar > div > ul .dark\\:bg-gray-700').forEach(btn => btn.classList.remove('bg-gray-100', 'dark:bg-gray-700'));
+          }
+
+          function highlightButton(button) {
+            // Remove 'selected' class from all buttons
+            removeSidebarHighlightButton();
+            // Add 'selected' class to the clicked button
+            button.classList.add('bg-gray-100', 'dark:bg-gray-700');
+          }
+          window.addEventListener('htmx:historyRestore', (event) => {
+            currentURL = new URL(window.location.href);
+            buttonId = currentURL.pathname.replaceAll('/', '');
+            if (buttonId == '') {
+              buttonId = 'chat-section';
+            }
+            currentButtom = document.getElementById(buttonId);
+            highlightButton(currentButtom);
+          });
+
+        </script>
+        <script src="{% static 'flowbite/dist/flowbite.min.js' %}"></script>
+        <script src="{% static 'apexcharts/dist/apexcharts.min.js' %}"></script>
+        <script src="{% static 'idiomorph/dist/idiomorph.min.js' %}"></script>
         {% component_js_dependencies %}
     </body>
 </html>

@@ -1,10 +1,11 @@
+{% load i18n %}
 <div class="block overflow-x-auto overflow-y-auto flex-grow h-[50vh]">
     <table class="border-collapse table-fixed w-full text-sm text-left text-gray-500 dark:text-gray-400">
         <thead class="sticky top-0 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <tr>
-                <th scope="col" class="px-6 py-3 w-3/5">Title</th>
-                <th scope="col" class="px-6 py-3 w-[12%]">Publication</th>
-                <th scope="col" class="px-6 py-3 w-1/5">Status</th>
+                <th scope="col" class="px-6 py-3 w-3/5">{% trans "Title" %}</th>
+                <th scope="col" class="px-6 py-3 w-[12%]">{% trans "Publication" %}</th>
+                <th scope="col" class="px-6 py-3 w-1/5">{% trans "Status" %}</th>
                 <th scope="col" class="px-6 py-3 w-12">
                     <span class="sr-only">Actions</span>
                 </th>
@@ -65,7 +66,7 @@
     <nav class="shadow-[0px_5px_20px_10px_#00000024] flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4"
          aria-label="Table navigation">
         <div class="flex items-center">
-            <label class="text-sm font-normal text-gray-500 dark:text-gray-400" for="">Rows per page</label>
+            <label class="text-sm font-normal text-gray-500 dark:text-gray-400" for="">{% trans "Rows per page" %}</label>
             <select name="limit"
                     id="pag-limit"
                     class="block h-full py-1.5 px-3 ml-3 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -83,7 +84,7 @@
             </select>
             <span class="ml-3 text-sm font-normal text-gray-500 dark:text-gray-400">
                 <span class="font-semibold text-gray-900 dark:text-white">{{ page_obj.start_index }}-{{ page_obj.end_index }}</span>
-                of
+                {% trans "of" %}
                 <span class="font-semibold text-gray-900 dark:text-white">{{ page_obj.paginator.count }}</span>
             </span>
         </div>
