@@ -218,6 +218,7 @@ class DigestDataForm(View):
             ranks=ranks,
             subjects=subjects,
             law_data=law_data,
+            administrator=administrator,
         )
 
         return context
