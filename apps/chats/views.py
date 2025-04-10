@@ -2,6 +2,7 @@ from typing import Any
 
 # isort: off
 from django.shortcuts import render
+from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Conversation, Message
 from django.views.generic import (
     TemplateView,
@@ -12,7 +13,7 @@ from django.http import Http404, QueryDict
 from common.util.locale import is_language_switcher_request
 
 
-class Chats(View):
+class Chats(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         context = {}

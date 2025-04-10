@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-05 04:42+0000\n"
+"POT-Creation-Date: 2025-04-10 06:22+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: apps/digest_data/urls.py:30 apps/digest_data/urls.py:31
+#: apps/digest_data/urls.py:50 apps/digest_data/urls.py:51
 msgid "Create Law"
 msgstr "Crear Ley"
 
-#: apps/digest_data/urls.py:38 apps/digest_data/urls.py:39
+#: apps/digest_data/urls.py:66 apps/digest_data/urls.py:67
 msgid "Update Law"
 msgstr "Actualizar Ley"
 
@@ -138,20 +138,16 @@ msgstr "Español"
 msgid "Write a query..."
 msgstr "Escribe una consulta..."
 
-#: templates/digest_data/digest_data_section.html:6
-msgid "All laws"
-msgstr "Todas las leyes"
-
-#: templates/digest_data/digest_data_section.html:10
-#: templates/digest_data/digest_data_section.html:24
+#: templates/digest_data/digest_data_section.html:9
+#: templates/digest_data/digest_data_section.html:23
 msgid "Search"
 msgstr "Buscar"
 
-#: templates/digest_data/digest_data_section.html:42
+#: templates/digest_data/digest_data_section.html:41
 msgid "Add Law"
 msgstr "Añadir Ley"
 
-#: templates/digest_data/digest_data_section.html:130
+#: templates/digest_data/digest_data_section.html:129
 msgid "Are you sure you want to delete this law?"
 msgstr "¿Estás seguro que deseas borrar esta ley?"
 
@@ -210,3 +206,6 @@ msgstr "Iniciar sesión"
 #: templates/user_authentication/login.html:51
 msgid "Forgot password?"
 msgstr "¿Olvidó su contraseña?"
+
+#~ msgid "All laws"
+#~ msgstr "Todas las leyes"
