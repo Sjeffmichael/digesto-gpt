@@ -1,95 +1,66 @@
-import json
+import logging
+import mimetypes
 import os
 import sys
-import threading
 from typing import List
+
+import html2text
 
 # isort: off
 import django
 import uvicorn
 from datasets import Dataset
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, FastAPI, Request
-from fastapi.responses import StreamingResponse
-from langchain.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_community.vectorstores import milvus
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse, JSONResponse
+from langchain.prompts import ChatPromptTemplate
+from langchain_milvus import Milvus
+from pymilvus import MilvusClient
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAI
-from langchain_huggingface.embeddings import huggingface as hf
 from pydantic import BaseModel
 from ragas import evaluate
 from ragas.embeddings import LangchainEmbeddingsWrapper
-from ragas.integrations.langchain import EvaluatorChain
 from ragas.llms import LangchainLLMWrapper
 from ragas.metrics import (
-    AnswerRelevancy,
-    ContextPrecision,
-    ContextRecall,
-    Faithfulness,
     answer_relevancy,
-    context_precision,
-    context_recall,
-    context_utilization,
     faithfulness,
+    LLMContextPrecisionWithoutReference,
 )
-from ragas.metrics.base import EvaluationMode
-from ragas.metrics.critique import (
-    coherence,
-    conciseness,
-    correctness,
-    harmfulness,
-    maliciousness,
-)
+from django.apps import apps
+from ragas.metrics._aspect_critic import coherence, conciseness, correctness
+from asgiref.sync import sync_to_async
+
+from fastapi_services.RAG import RAG
+from utils.custler_semantic_chunker import ClusterSemanticChunker
 
 load_dotenv(".env")
+
+# Initialize Django
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "on_premise_gpt.settings")
-# Initialize Django
 django.setup()
 
+from apps.digest_data.models import Law  # noqa: E402
 from apps.chats.models import Message  # noqa: E402
+
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-app = FastAPI()
+app = FastAPI(swagger_ui_parameters={"syntaxHighlight.theme": "obsidian"})
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-1.0-pro",
-    api_key=GEMINI_API_KEY,
-    verbose=True,
-    # callbacks=[],
-    # temperature=0.9,
-)
-
-embedding_model = hf.HuggingFaceEmbeddings(
-    model_name="intfloat/multilingual-e5-large-instruct",
-    model_kwargs={"device": "cpu"},
-    encode_kwargs={"normalize_embeddings": True},
-)
+rag_service = RAG()
 
 langchain_llm = LangchainLLMWrapper(
-    GoogleGenerativeAI(
-        model="gemini-1.0-pro",
-        google_api_key=GEMINI_API_KEY,
-        verbose=True,
-    )
+    rag_service.llm
+    # GoogleGenerativeAI(
+    #     model="gemini-1.0-pro",
+    #     google_api_key=GEMINI_API_KEY,
+    #     verbose=True,
+    # )
 )
 
-langchain_embeddings = LangchainEmbeddingsWrapper(embedding_model)
-
-vector_db = milvus.Milvus(
-    embedding_model, connection_args={"host": "127.0.0.1", "port": "19530"}
-)
-
-
-retriever = vector_db.as_retriever()
-
-faithfulness_metric = Faithfulness()
-answer_relevancy_metric = AnswerRelevancy(evaluation_mode=EvaluationMode.qac)
-context_recall_metric = ContextRecall(evaluation_mode=EvaluationMode.qac)
-context_precision_metric = ContextPrecision(evaluation_mode=EvaluationMode.qac)
+langchain_embeddings = LangchainEmbeddingsWrapper(rag_service.dense_embeddings)
 
 
 class Documents(BaseModel):
@@ -101,11 +72,11 @@ async def generate_title(request: Request):
     body = await request.json()
     input_message = body.get("input_message")
     template = """
-    Genera un título corto para un chat basandote en el siguiente mensaje.
+    Genera unicamente un título corto para un chat basandote en el siguiente mensaje.
     Mensaje: {message}
     """
     prompt = ChatPromptTemplate.from_template(template)
-    llm_chain = prompt | llm | StrOutputParser()
+    llm_chain = prompt | rag_service.llm | StrOutputParser()
     result = await llm_chain.ainvoke(
         {
             "message": input_message,
@@ -117,15 +88,16 @@ async def generate_title(request: Request):
 
 def ragas_metrics(metrics_data, message_id):
     dataset = Dataset.from_dict(metrics_data)
+    print(dataset)
     score = evaluate(
         dataset,
         metrics=[
             faithfulness,
             answer_relevancy,
-            context_utilization,
+            LLMContextPrecisionWithoutReference(),
             # harmfulness, maliciousness,
-            coherence,
             correctness,
+            coherence,
             conciseness,
         ],
         llm=langchain_llm,
@@ -138,98 +110,133 @@ def ragas_metrics(metrics_data, message_id):
     print(score)
 
 
-# @shared_task
-# def answer_metrics():
-#     print("entro")
-
-
-async def dump_results(results, message_id):
-    metrics_data = {}
-    answer = ""
-
-    async for result in results:
-        if result.get("question"):
-            metrics_data["question"] = [result.get("question")]
-        elif result.get("answer"):
-            answer += result.get("answer")
-        elif result.get("context"):
-            metrics_data["contexts"] = [
-                list(map(lambda x: x["page_content"], result.get("context")))
-            ]
-        # yield json.dumps({})
-        yield json.dumps(result)
-
-    metrics_data["answer"] = [answer]
-
-    x = threading.Thread(
-        target=ragas_metrics,
-        kwargs={"metrics_data": metrics_data, "message_id": message_id},
-    )
-    x.start()
-    # answer_metrics.delay()
-
-    # dataset = Dataset.from_dict(metrics_data)
-    # score = evaluate(dataset, metrics=[
-    #         faithfulness,
-    #         answer_relevancy,
-    #         context_utilization,
-    #         # harmfulness, maliciousness,
-    #         coherence, correctness, conciseness
-    #     ],
-    #     llm=langchain_llm,
-    #     embeddings=langchain_embeddings
-    # )
-
-
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
-
-
-def get_references_url(context: str):
-    dict_context = dict(context)
-    return dict_context.get("metadata").get("url")
-
-
 @app.get("/generate-response", response_class=StreamingResponse)
 async def generate_response(request: Request):
-    template = """
-    Eres un chatot para responder consultas sobre información contenida
-    en el digesto jurídico Nicaraguese. Utiliza el proporcionado contexto para
-    dar una respuesta detallada y bien explicada sobre la siguiente pregunta.
-    Si no sabes la respuesta, simplemente di que no la sabes.
 
-    Pregunta: {question}
-    Contexto: {context}
-    Respuesta: """
     body = await request.json()
     input_message = body.get("input_message")
     message_id = body.get("message_id")
 
-    promp = ChatPromptTemplate.from_template(template)
-    rag_chain_from_docs = (
-        RunnablePassthrough.assign(context=(lambda x: format_docs(x["context"])))
-        | promp
-        | llm
-        | StrOutputParser()
-    )
-
-    rag_chain_with_source = RunnableParallel(
-        {"context": retriever, "question": RunnablePassthrough()}
-    ).assign(
-        answer=rag_chain_from_docs,
-        context=lambda x: list(map(dict, x["context"])),
-        references_url=lambda x: list(map(get_references_url, x["context"])),
-    )
-
-    result = rag_chain_with_source.astream(
-        input_message,
-    )
+    result = rag_service.generate_response(input_message, True)
 
     return StreamingResponse(
-        dump_results(result, message_id),
+        rag_service.dump_results(result, message_id),
         # result,
         media_type="text/event-stream",
     )
+
+
+class TextData(BaseModel):
+    text: str
+    metadata: dict
+
+
+def delete_all_from_db():
+    vector_db = MilvusClient(uri="http://localhost:19530")
+
+    vector_db.drop_collection(collection_name="LangChainCollection")
+
+
+LAWS_DIR = apps.get_app_config("digest_data").path + "/files/laws"
+
+
+@sync_to_async
+def get_all_laws():
+    return list(Law.objects.all())
+
+
+@app.post("/chunk-and-save")
+async def chunk_and_save_text(request: Request):
+
+    text_splitter = ClusterSemanticChunker(
+        embedding_function=rag_service.dense_embeddings.embed_documents
+    )
+
+    laws = await get_all_laws()
+    for index, law in enumerate(laws):
+        extension = mimetypes.guess_extension(mimetypes.guess_type(law.filename)[0])
+        try:
+            with open(os.path.join(LAWS_DIR, law.id + extension)) as law_file:
+                text = html2text.html2text(law_file.read())
+
+                law.metadata.pop("norma_archivos_relacionados")
+
+                chunks = text_splitter.create_documents([text])
+                # embbed metadata into text
+                for index_2, _ in enumerate(chunks):
+                    chunks[index_2].page_content = (
+                        "Número de la norma: {norma_numero}\n"
+                        "Título: {norma_titulo}\n"
+                        "Materia: {norma_materia}\n"
+                        "Estado: {norma_estado}\n"
+                        "Categoría: {norma_categoria}\n"
+                        "Rango: {norma_rango}\n"
+                        "Fecha publicación: {norma_fecha_publicacion}\n"
+                        "Fecha aprobación: {norma_fecha_aprobacion}\n"
+                        "URL: {norma_url}\n"
+                        "{page_content}"
+                    ).format(
+                        norma_numero=law.metadata.get("norma_numero"),
+                        norma_titulo=law.metadata.get("norma_titulo"),
+                        norma_materia=law.metadata.get("norma_materia"),
+                        norma_estado=law.metadata.get("norma_estado"),
+                        norma_categoria=law.metadata.get("norma_categoria"),
+                        norma_rango=law.metadata.get("norma_rango"),
+                        norma_fecha_publicacion=law.metadata.get(
+                            "norma_fecha_publicacion"
+                        ),
+                        norma_fecha_aprobacion=law.metadata.get(
+                            "norma_fecha_aprobacion"
+                        ),
+                        norma_url=law.metadata.get("norma_url"),
+                        page_content=chunks[index_2].page_content,
+                    )
+
+                    if index_2 == 1:
+                        print(chunks[index_2])
+
+                Milvus.from_documents(
+                    chunks,
+                    rag_service.dense_embeddings,
+                    connection_args={"host": "127.0.0.1", "port": "19530"},
+                )
+
+        except Exception as e:
+            logging.error(e, stack_info=True, exc_info=True)
+
+        if index == 4:
+            break
+
+    return JSONResponse(content={"status": 1})
+
+
+@app.post("/chunk-and-save-custom-splitter")
+async def chunk_and_save_text_custom_splitter(request: Request):
+    try:
+        list_of_laws = [
+            "Norma_902.html",
+            "Norma_963.html",
+            "Norma_s_n(3).html",
+            "Norma_870.html",
+            "Norma_1035.html",
+            "Norma_641.html",
+            "Norma_1058.html",
+        ]
+
+        for law in list_of_laws:
+            with open(os.path.join(LAWS_DIR, law)) as law_file:
+                chunks = rag_service.custom_text_splitter(law_file.read())
+
+                await rag_service.vector_db.aadd_texts(chunks)
+    except Exception as e:
+        logging.error(e, stack_info=True, exc_info=True)
+
+
+@app.post("/evaluate-rag")
+async def evaluate_rag(request: Request):
+    rag_service.test_accuracy()
+
+    return ""
 
 
 if __name__ == "__main__":
