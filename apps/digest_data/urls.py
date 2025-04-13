@@ -1,7 +1,7 @@
 from django.urls import path, re_path
 from django.utils.translation import gettext_lazy as _
 
-from .views import DigestDataCrud, DigestDataForm, DigestUserDataForm
+from .views import DigestDataCrud, DigestDataForm, DigestDataUserForm, DigestUserDataCrud
 
 urlpatterns = [
     path(
@@ -11,7 +11,7 @@ urlpatterns = [
     ),
     path(
         "",
-        DigestUserDataForm.as_view(template_name="user/users_full.html"),
+        DigestUserDataCrud.as_view(template_name="user/users_full.html"),
         name="users-section",
     ),
     path(
@@ -21,7 +21,7 @@ urlpatterns = [
     ),
     path(
         "table",
-        DigestUserDataForm.as_view(template_name="users/users_table.html"),
+        DigestUserDataCrud.as_view(template_name="users/users_table.html"),
         name="users/table",
     ),
     path(
@@ -31,7 +31,7 @@ urlpatterns = [
     ),
     path(
         "delete/<pk>",
-        DigestUserDataForm.as_view(template_name="users/users_table.html"),
+        DigestUserDataCrud.as_view(template_name="users/users_table.html"),
         name="delete-user",
     ),
     re_path(
@@ -41,7 +41,7 @@ urlpatterns = [
     ),
     re_path(
         r"^upsert(?:/(?P<id>\d+))?$",
-        DigestUserDataForm.as_view(template_name="users/users_table.html"),
+        DigestUserDataCrud.as_view(template_name="users/users_table.html"),
         name="upsert-user",
     ),
     path(
@@ -54,7 +54,7 @@ urlpatterns = [
     ),
     path(
         "upsert_user-form",
-        DigestUserDataForm.as_view(
+        DigestDataUserForm.as_view(
             modal_header="Create New User",
             confirm_botton_text="Create User",
         ),
@@ -70,7 +70,7 @@ urlpatterns = [
     ),
     path(
         "upsert-form/<str:id>",
-        DigestUserDataForm.as_view(
+        DigestDataUserForm.as_view(
             modal_header="Update User",
             confirm_botton_text="Update User",
         ),

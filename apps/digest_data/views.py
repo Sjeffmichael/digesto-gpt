@@ -22,6 +22,7 @@ from apps.digest_data.pydantic_models import (
     LawMetadata,
     UserDataFormContext,
     UserData,
+    UserDataTable,
     UserMetadata,
     categories,
     ranks,
@@ -222,20 +223,90 @@ class DigestDataForm(View):
         )
 
         return context
-
-class DigestUserDataForm(View):
-    template_name = 'user_data_form/template.html'
+    
+class DigestDataUserForm(View):
     modal_header = ""
     confirm_botton_text = ""
+
     def get(self, request, id=None):
         queryset = None
         if id is not None:
             queryset = self.get_queryset(id)
+
         context = self.get_context_data(queryset, request)
+
         return UserDataForm.render_to_response(kwargs={"data_context": context})
+
+    def get_queryset(self, id):
+        user = User.objects.get(pk=id)
+        return user
+
+    def get_context_data(self, queryset: User, request):
+        csrf_token = get_token(request)
+        user_data = None
+        if queryset is not None:
+            user_data = UserData(
+                id=queryset.id,
+                filename=queryset.filename,
+                metadata=UserMetadata(**queryset.metadata),
+            )
+
+        print(type(self.modal_header), type(self.confirm_botton_text))
+
+        context = UserDataFormContext(
+            modal_header=str(self.modal_header),
+            csrf_token=csrf_token,
+            confirm_botton_text=str(self.confirm_botton_text),
+            statuses=statuses,
+            categories=categories,
+            ranks=ranks,
+            subjects=subjects,
+            user_data=user_data,
+            administrator=administrator,
+        )
+
+        return context
+
+class DigestUserDataCrud(View):
+    template_name = ""
+    LIMIT_OPTIONS = [10, 25, 50, 100]
+    DEFAULT_LIMIT = 10
+    DEFAULT_PAGE = 1
+
+    def get(self, request, *args, **kwargs):
+        query_set = self.get_queryset()
+        context = self.get_context_data(
+            query_set,
+            int(request.GET.get("page", "1")),
+            int(request.GET.get("limit", "10")),
+        )
+
+        if request.htmx and not is_language_switcher_request(request):
+            self.template_name = "users/users_section.html"
+
+        return render(request, self.template_name, context)
+    
+    def delete(self, request, *args, **kwargs):
+        body_data = QueryDict(request.body)
+        try:
+            user = get_object_or_404(User, pk=kwargs.get("pk", ""))
+            user.delete()
+            add_message(request, messages.SUCCESS, "User deleted successfully")
+        except Http404:
+            add_message(request, messages.ERROR, "User not found")
+
+        query_set = self.get_queryset()
+
+        context = self.get_context_data(
+            query_set,
+            int(body_data.get("page", "1")),
+            int(body_data.get("limit", "10")),
+        )
+
+        return render(request, self.template_name, context)
+
     def post(self, request, id=None, *args, **kwargs):
         body_data = {key: value[0] for key, value in request.POST.lists()}
-        print(body_data)
         if id is not None:
             try:
                 user_data = UserData(
@@ -269,36 +340,68 @@ class DigestUserDataForm(View):
                 new_user.save()
                 add_message(request, messages.SUCCESS, "User created successfully")
             except Exception as e:
-                add_message(request, messages.ERROR, f"Error: {str(e)}")
+                add_message(request, messages.ERROR, "Error creating user")
+
         query_set = self.get_queryset()
         context = self.get_context_data(
             query_set,
             int(body_data.get("page", "1")),
             int(body_data.get("limit", "10")),
         )
+
         return render(request, self.template_name, context)
-    def get_queryset(self, id):
-        user = User.objects.get(pk=id)
-        return user
-    def get_context_data(self, queryset: User, request):
-        csrf_token = get_token(request)
-        user_data = None
-        if queryset is not None:
-            user_data = UserData(
-                id=queryset.id,
-                filename=queryset.filename,
-                metadata=UserMetadata(**queryset.metadata),
+    
+    def get_queryset(self) -> QuerySet[Any]:
+        query_set = User.objects.all()
+
+        user_data = []
+        for user in query_set:
+            user_data.append(
+                UserDataTable(
+                    id = user.id,
+                    password = user.metadata.get("user_password`"),
+                    last_login = user.metadata.get("last_login"),
+                    super_user = user.metadata.get("super_user"),
+                    name = user.metadata.get("user_name"),
+                    firstname = user.metadata.get("user_firstname"),
+                    lastname = user.metadata.get("user_lastname"),
+                    date_joined = user.metadata.get("date_joined"),
+                    email = user.metadata.get("user_email"),
+                    active = user.metadata.get("user_active"),
+                    administrator = user.metadata.get("administrator"),
+                )
             )
-        context = UserDataFormContext(
-            modal_header=self.modal_header,
-            csrf_token=csrf_token,
-            confirm_botton_text=self.confirm_botton_text,
-            statuses=statuses,
-            categories=categories,
-            ranks=ranks,
-            subjects=subjects,
-            user_data=user_data,
-            administrator=administrator,
+
+        return user_data
+    
+    def get_context_data(self, queryset, page, limit):
+
+        # Adjust pagination
+        paginator = Paginator(queryset, limit)
+
+        try:
+            users = paginator.page(page)
+        except PageNotAnInteger:
+            users = paginator.page(self.DEFAULT_PAGE)
+        except EmptyPage:
+            users = paginator.page(paginator.num_pages)
+
+        users.adjusted_elided_pages = paginator.get_elided_page_range(
+            users.number,
+            on_each_side=1,
         )
+
+        context = {
+            "paginator": paginator,
+            "page_obj": users,
+            "users": users,
+            "limit": limit,
+            "limit_options": self.LIMIT_OPTIONS,
+            "statuses": statuses,
+            "categories": categories,
+            "ranks": ranks,
+            "subjects": subjects,
+            "administrator": administrator,
+        }
 
         return context
