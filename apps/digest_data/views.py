@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import View
 
 from apps.digest_data.models import Law
-from apps.digest_data.models import User
+from apps.user_authentication.models import User
 
 # isort: off
 from apps.digest_data.pydantic_models import (
@@ -229,17 +229,31 @@ class DigestDataUserForm(View):
     confirm_botton_text = ""
 
     def get(self, request, id=None):
+        print(f"El id recibido en la petición es: {id}")  # Imprimir el id recibido
         queryset = None
         if id is not None:
             queryset = self.get_queryset(id)
+        
+        if queryset is not None:
+            self.modal_header = "Update User"
+            self.confirm_botton_text = "Update User"
+        else:
+            self.modal_header = "Create New User"
+            self.confirm_botton_text = "Create User"
 
         context = self.get_context_data(queryset, request)
 
         return UserDataForm.render_to_response(kwargs={"data_context": context})
 
     def get_queryset(self, id):
-        user = User.objects.get(pk=id)
-        return user
+        print(f"Buscando usuario con id: {id}")  # Agregar un print aquí
+        try:
+            user = User.objects.get(pk=id)
+            print(f"Usuario encontrado: {user}")  # También imprimir el objeto usuario encontrado
+            return user
+        except User.DoesNotExist:
+            print(f"Usuario con id {id} no encontrado.")  # En caso de no encontrar al usuario
+            return None
 
     def get_context_data(self, queryset: User, request):
         csrf_token = get_token(request)
@@ -247,11 +261,16 @@ class DigestDataUserForm(View):
         if queryset is not None:
             user_data = UserData(
                 id=queryset.id,
-                filename=queryset.filename,
-                metadata=UserMetadata(**queryset.metadata),
+                email=queryset.email,
+                first_name=queryset.first_name,
+                last_name=queryset.last_name,
+                is_active=queryset.is_active,
+                is_admin=queryset.is_admin,
             )
 
-        print(type(self.modal_header), type(self.confirm_botton_text))
+            print(f"Datos del usuario encontrado: ID={user_data.id}, Email={user_data.email}, "
+              f"First Name={user_data.first_name}, Last Name={user_data.last_name}, "
+              f"Active={user_data.is_active}, Admin={user_data.is_admin}")
 
         context = UserDataFormContext(
             modal_header=str(self.modal_header),
@@ -309,38 +328,43 @@ class DigestUserDataCrud(View):
         body_data = {key: value[0] for key, value in request.POST.lists()}
         if id is not None:
             try:
-                user_data = UserData(
-                    id=id,
-                    metadata=UserMetadata.model_construct(
-                        **body_data,
-                    ),
+                User.objects.filter(id=id).update(
+                    email=body_data.get("email"),
+                    first_name=body_data.get("first_name"),
+                    last_name=body_data.get("last_name"),
+                    is_active=body_data.get("is_active") == "1",
+                    is_admin=body_data.get("is_admin") == "1",
+                    username=body_data.get("username"),
                 )
-                User.objects.filter(id=user_data.id).update(
-                    metadata=user_data.metadata.model_dump(
-                        by_alias=True, exclude_none=True
-                    ),
-                )
-                add_message(request, messages.ERROR, "User updated successfully")
+                add_message(request, messages.SUCCESS, "User updated successfully")
+                print(f"User updated: {body_data}")  # Imprimir datos de usuario actualizado
             except Exception as e:
-                add_message(request, messages.ERROR, "Error updating user")
+                add_message(request, messages.ERROR, f"Error updating user: {e}")
+                print(f"Error updating user: {e}")
         else:
             try:
-                user_data = UserData(
-                    id=str(uuid.uuid4()),
-                    metadata=UserMetadata.model_construct(
-                        **body_data,
-                    ),
-                )
+                # Crear nuevo usuario
                 new_user = User(
-                    id=user_data.id,
-                    metadata=user_data.metadata.model_dump(
-                        by_alias=True, exclude_none=True
-                    ),
+                    email=body_data.get("email"),
+                    first_name=body_data.get("first_name"),
+                    last_name=body_data.get("last_name"),
+                    is_active=body_data.get("is_active") == "1",
+                    is_admin=body_data.get("is_admin") == "1",
+                    username=body_data.get("username"),
+                    password=body_data.get("password"),
+                    date_joined=timezone.now(),
                 )
                 new_user.save()
                 add_message(request, messages.SUCCESS, "User created successfully")
+
+                # Imprimir los datos del nuevo usuario
+                print(f"User created: ID={new_user.id}, Username={new_user.username}, Email={new_user.email}, "
+                    f"First Name={new_user.first_name}, Last Name={new_user.last_name}, Active={new_user.is_active}, "
+                    f"Admin={new_user.is_admin}, Date Joined={new_user.date_joined}")
+
             except Exception as e:
-                add_message(request, messages.ERROR, "Error creating user")
+                add_message(request, messages.ERROR, f"Error creating user: {e}")
+                print(f"Error creating user: {e}")
 
         query_set = self.get_queryset()
         context = self.get_context_data(
@@ -350,6 +374,7 @@ class DigestUserDataCrud(View):
         )
 
         return render(request, self.template_name, context)
+
     
     def get_queryset(self) -> QuerySet[Any]:
         query_set = User.objects.all()

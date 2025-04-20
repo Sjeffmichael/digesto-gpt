@@ -79,8 +79,12 @@ class LawData(BaseModel):
 
 class UserData(BaseModel):
     id: int
-    metadata: UserMetadata
-
+    email: str
+    first_name: str
+    last_name: str
+    is_active: bool
+    is_admin: bool
+    
 class LawDataFormContext(BaseModel):
     modal_header: str
     confirm_botton_text: str
