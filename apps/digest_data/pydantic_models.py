@@ -52,31 +52,39 @@ class LawMetadata(BaseModel):
 
 
 class UserMetadata(BaseModel):
-    name: str = Field(serialization_alias="user-name",alias="user-name",)
+    password: str = Field(serialization_alias="user_password", alias="user_password")
 
-    firstname: str = Field(serialization_alias="user-first-name", alias="user-first-name")
+    last_login: str = Field(serialization_alias="last_login", alias="last_login")
+
+    super_user: str = Field(serialization_alias="super_user", alias="super_user")
+
+    name: str = Field(serialization_alias="user_name",alias="user_name",)
+
+    firstname: str = Field(serialization_alias="user_firstname", alias="user_firstname")
     
-    lastname: str = Field(serialization_alias="user-last_name", alias="user-last_name")
-    
-    email: str = Field(serialization_alias="user-email", alias="user-email")
-    
+    lastname: str = Field(serialization_alias="user_lastname", alias="user_lastname")
+
+    date_joined: str = Field(serialization_alias="date_joined", alias="date_joined")
+
+    email: str = Field(serialization_alias="user_email", alias="user_email")
+
+    active: str = Field(serialization_alias="active", alias="active")
+
     administrator: str = Field(serialization_alias="admin", alias="admin")
-
-    password: str = Field(serialization_alias="user-password", alias="user-password")
     
-    confirmpassword: str = Field(serialization_alias="user-password-confirm", alias="user-password-confirm")
-
-    #creation_date: str = Field(serialization_alias="fecha_creacion", alias="fecha_creacion")
-
 class LawData(BaseModel):
     id: str
     filename: str
     metadata: LawMetadata
 
 class UserData(BaseModel):
-    id: str
-    metadata: UserMetadata
-
+    id: int
+    email: str
+    first_name: str
+    last_name: str
+    is_active: bool
+    is_admin: bool
+    
 class LawDataFormContext(BaseModel):
     modal_header: str
     confirm_botton_text: str
@@ -107,6 +115,18 @@ class LawDataTable(BaseModel):
     status: str
     publication_date: Optional[str]
 
+class UserDataTable(BaseModel):
+    id: int
+    password: str
+    last_login: str
+    super_user: bool
+    name: str
+    firstname: str
+    lastname: str
+    date_joined: str
+    email: str
+    active: bool
+    administrator: bool
 
 statuses = [
     "Vigente",
