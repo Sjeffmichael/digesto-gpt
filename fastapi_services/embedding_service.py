@@ -29,9 +29,17 @@ from ragas.metrics import (
 from django.apps import apps
 from ragas.metrics._aspect_critic import coherence, conciseness, correctness
 from asgiref.sync import sync_to_async
+from pandas import read_csv, DataFrame
+from bs4 import BeautifulSoup
+import ast
+import matplotlib.pyplot as plt
+import numpy as np
+from contextlib import redirect_stdout
 
 from fastapi_services.RAG import RAG
 from utils.custler_semantic_chunker import ClusterSemanticChunker
+from tqdm import tqdm
+from semantic_chunkers import StatisticalChunker
 
 load_dotenv(".env")
 
@@ -42,6 +50,7 @@ django.setup()
 
 from apps.digest_data.models import Law  # noqa: E402
 from apps.chats.models import Message  # noqa: E402
+from apps.digest_data.models import TextChunk  # noqa: E402
 
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -137,16 +146,12 @@ def delete_all_from_db():
     vector_db.drop_collection(collection_name="LangChainCollection")
 
 
-LAWS_DIR = apps.get_app_config("digest_data").path + "/files/laws"
-
-
-@sync_to_async
-def get_all_laws():
-    return list(Law.objects.all())
+DIGEST_FILES_DIR = apps.get_app_config("digest_data").path + "/files"
+LAWS_DIR = DIGEST_FILES_DIR + "/laws"
 
 
 @app.post("/chunk-and-save")
-async def chunk_and_save_text(request: Request):
+async def chunk_and_save(request: Request):
 
     text_splitter = ClusterSemanticChunker(
         embedding_function=rag_service.dense_embeddings.embed_documents
@@ -210,31 +215,272 @@ async def chunk_and_save_text(request: Request):
     return JSONResponse(content={"status": 1})
 
 
-@app.post("/chunk-and-save-custom-splitter")
-async def chunk_and_save_text_custom_splitter(request: Request):
+@sync_to_async
+def get_law_by_id(id):
+    return Law.objects.filter(id=id).first()
+
+
+@sync_to_async
+def get_not_proccessed_laws_chunks():
+    return list(
+        TextChunk.objects.filter(proccessed=False).order_by("law", "fragment_number")
+    )
+
+
+@sync_to_async
+def get_all_laws():
+    return list(Law.objects.all())
+
+
+@sync_to_async
+def get_not_proccessed_laws():
+    return list(Law.objects.filter(proccessed=False))
+
+
+@sync_to_async
+def save_chunks_batch(chunks: List[TextChunk]):
+    TextChunk.objects.bulk_create(
+        chunks,
+        update_conflicts=True,
+        update_fields=["content"],
+        unique_fields=["fragment_number", "law"],
+    )
+
+
+@sync_to_async
+def update_proccessed_law(id: str):
+    Law.objects.filter(id=id).update(proccessed=True)
+
+
+@sync_to_async
+def update_proccessed_chunks(id: int):
+    TextChunk.objects.filter(id=id).update(proccessed=True)
+
+
+@app.post("/chunk-and-save-dataset")
+async def chunk_and_save_dataset(request: Request):
     try:
-        list_of_laws = [
-            "Norma_902.html",
-            "Norma_963.html",
-            "Norma_s_n(3).html",
-            "Norma_870.html",
-            "Norma_1035.html",
-            "Norma_641.html",
-            "Norma_1058.html",
-        ]
 
-        for law in list_of_laws:
-            with open(os.path.join(LAWS_DIR, law)) as law_file:
-                chunks = rag_service.custom_text_splitter(law_file.read())
+        dataset = read_csv(os.path.join(DIGEST_FILES_DIR, "digest_queries_dataset.csv"))
+        unique_reference = dataset["reference"].dropna().unique().tolist()
+        for index, row in enumerate(unique_reference):
+            url = row  # ["reference"]
+            id = url.split("?idnorm=")[-1]
+            law = await get_law_by_id(id)
+            if id != "Mzkx#":
+                continue
 
-                await rag_service.vector_db.aadd_texts(chunks)
+            with open(os.path.join(LAWS_DIR, id + ".html")) as law_file:
+                soup = BeautifulSoup(law_file.read(), "html.parser")
+                chunks = rag_service.statistical_chunker(docs=[soup.text])
+
+                metadata_str = ""
+                for key, value in law.metadata.items():
+                    metadata_str += "{key}: {value}\n".format(
+                        key=key.replace("_", " ").replace("norma ", "").capitalize(),
+                        value=value,
+                    )
+
+                    # if key == "norma_archivos_relacionados":
+                    #     continue
+                    # if key == "norma_numero":
+                    #     metadata[key] = value.split("-")[0]
+                # embbed metadata into text
+                text_chunks = []
+                for index_2 in range(len(chunks[0])):
+                    frament_number = index_2 + 1
+                    metadata_str2 = metadata_str + "Fragmento: {}\n".format(
+                        frament_number
+                    )
+                    text_chunks.append(
+                        TextChunk(
+                            fragment_number=frament_number,
+                            content=metadata_str2 + " ".join(chunks[0][index_2].splits),
+                            law=law,
+                        )
+                    )
+
+                await save_chunks_batch(text_chunks)
+
+                with open("logs/chunks.log", "w") as f:
+                    with redirect_stdout(f):
+                        # print("hola mundo")
+                        rag_service.statistical_chunker.print(chunks[0])
+                        # pass
+                        # rag_service.statistical_chunker.print(chunks[0])
+
+                # await rag_service.vector_db.aadd_texts(chunks)
+                # if index == 0:
+                #     break
+    except Exception as e:
+        logging.error(e, stack_info=True, exc_info=True)
+
+
+@app.post("/chunk-and-save-text")
+async def chunk_and_save_text(request: Request):
+    try:
+
+        not_proccessed_laws = await get_not_proccessed_laws()
+        for law in tqdm(not_proccessed_laws, "Laws"):
+            with open(os.path.join(LAWS_DIR, law.filename)) as law_file:
+                soup = BeautifulSoup(law_file.read(), "html.parser")
+                chunker = StatisticalChunker(
+                    rag_service.chunker_encoder,
+                    plot_chunks=False,
+                    max_split_tokens=500,
+                    enable_statistics=True,
+                )
+
+                chunks = chunker(docs=[soup.text])
+
+                del chunker
+                metadata_str = ""
+                for key, value in law.metadata.items():
+                    metadata_str += "{key}: {value}\n".format(
+                        key=key.replace("_", " ").replace("norma ", "").capitalize(),
+                        value=value,
+                    )
+
+                # embbed metadata into text
+                text_chunks = []
+                for index_2 in range(len(chunks[0])):
+                    frament_number = index_2 + 1
+                    metadata_str2 = metadata_str + "Fragmento: {}\n".format(
+                        frament_number
+                    )
+                    text_chunks.append(
+                        TextChunk(
+                            fragment_number=frament_number,
+                            content=metadata_str2 + " ".join(chunks[0][index_2].splits),
+                            law=law,
+                        )
+                    )
+
+            await save_chunks_batch(text_chunks)
+            await update_proccessed_law(law.id)
+
+            # with open("logs/chunks.log", "w") as f:
+            #     with redirect_stdout(f):
+            # print("hola mundo")
+            # rag_service.statistical_chunker.print(chunks[0])
+            # pass
+            # rag_service.statistical_chunker.print(chunks[0])
+
+            # await rag_service.vector_db.aadd_texts(chunks)
+            # if index == 0:
+            #     break
+            # break
     except Exception as e:
         logging.error(e, stack_info=True, exc_info=True)
 
 
 @app.post("/evaluate-rag")
 async def evaluate_rag(request: Request):
-    rag_service.test_accuracy()
+    queries_dataset = read_csv("dataset_result.csv")
+    queries_dataset["retrieved_contexts"] = queries_dataset["retrieved_contexts"].apply(
+        ast.literal_eval
+    )
+    # print(queries_dataset.to_dict(orient="records")[0:1])
+    rag_service.test_accuracy(queries_dataset.to_dict(orient="records"))
+    # rag_service.test_accuracy()
+
+    return ""
+
+
+@app.post("/embbed-and-save-data")
+async def embbed_and_save_data(request: Request):
+    laws_chunks = await get_not_proccessed_laws_chunks()
+    # i = 0
+
+    for chunk in tqdm(laws_chunks, desc="Laws"):
+        # i += 1
+        # id, law_id, fragment_number = await get_chunk_data(chunk)
+        # print(id, law_id, fragment_number)
+        # if i == 10:
+        #     break
+        # print(law.fragment_number)
+        await rag_service.vector_db.aadd_texts(
+            [chunk.content],
+            metadatas=[{"law_id": chunk.__dict__.get("law_id")}],
+        )
+        await update_proccessed_chunks(chunk.id)
+
+    return ""
+
+
+@app.post("/generate-dataset")
+async def generate_dataset(request: Request):
+    queries_dataset = read_csv(
+        os.path.join(DIGEST_FILES_DIR, "digest_queries_dataset.csv")
+    )
+    test_df = DataFrame(
+        columns=["user_input", "retrieved_contexts", "response", "reference"]
+    )
+
+    for _, row in queries_dataset.dropna().iterrows():
+        result = rag_service.generate_response(row["query"])
+        # add the result to the dataframe
+        test_df.loc[len(test_df)] = [
+            row["query"],
+            list(map(lambda x: x["page_content"], result.get("context"))),
+            result.get("answer"),
+            row["answer"],
+        ]
+
+    test_df.to_csv("dataset_result.csv", index=False)
+
+
+@sync_to_async
+def get_chunk_data(chunk):
+    return chunk.id, chunk.law.id, chunk.fragment_number
+
+
+@app.post("/generate-charts")
+def generate_charts(request: Request):
+    evaluation_result_df = read_csv("evaluation_result.csv")
+
+    chart_data = [
+        {
+            "metric": "faithfulness",
+            "title": "Fidelidad",
+            "xlabel": "Consultas",
+            "ylabel": "Puntuación",
+        },
+        {
+            "metric": "llm_context_precision_with_reference",
+            "title": "Precisión del Contexto",
+            "xlabel": "Consultas",
+            "ylabel": "Puntuación",
+        },
+        {
+            "metric": "answer_relevancy",
+            "title": "Relevancia de la Respuesta",
+            "xlabel": "Consultas",
+            "ylabel": "Puntuación",
+        },
+        {
+            "metric": "context_recall",
+            "title": "Recuperación del Contexto",
+            "xlabel": "Consultas",
+            "ylabel": "Puntuación",
+        },
+    ]
+
+    for data in chart_data:
+        y = list(
+            map(lambda x: x * 100, evaluation_result_df[data.get("metric")].to_list())
+        )
+        y_len = len(y)
+        x = 0.5 + np.arange(y_len)
+
+        plt.bar(x, y)
+        plt.title(data.get("title"))
+        plt.xlabel(data.get("xlabel"))
+        plt.ylabel(data.get("ylabel"))
+
+        plt.savefig(data.get("metric") + ".png")
+
+        plt.close()
 
     return ""
 

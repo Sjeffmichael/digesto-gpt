@@ -6,16 +6,12 @@
     Digesto GPT Login
 {% endblock title %}
 {% block content %}
-    <section class="bg-gray-50 dark:bg-gray-900">
+    <section class="bg-gray-50 dark:bg-gray-900" id="auth-form">
         <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
             <div class="flex items-center mb-6">
-                <img class="w-10 h-10 mr-2"
-                     src="{% static 'images/nicaraguan_flag.png' %}"
+                <img class="w-20 mr-2 object-cover"
+                     src="{% static 'images/digesto_gpt_logo.png' %}"
                      alt="">
-                <img class="w-10 h-10 mr-2"
-                     src="{% static 'images/woob_hammer.png' %}"
-                     alt="">
-                <img class="w-10 h-10 mr-2" src="{% static 'images/bot.png' %}" alt="">
                 <span class="text-2xl font-semibold text-gray-900 dark:text-white">Digesto GPT</span>
             </div>
             <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
@@ -24,34 +20,47 @@
                         {% trans "Sign in to your account" %}
                     </h1>
                     <form class="space-y-4 md:space-y-6"
-                          action="{% url 'authentication:login' %}"
-                          method="post">
+                          hx-post="{% url 'authentication:login' %}">
                         <div>
                             <label for="email"
                                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                 {% trans "Email" %}
                             </label>
-                            {{ form.username }}
+                            {% trans "name@domain.com" as email_placeholder %}
+                            {% render_field form.username class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder=email_placeholder %}
+                            {% for error in errors %}<p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error.message }}</p>{% endfor %}
                         </div>
                         <div>
                             <label for="password"
                                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                 {% trans "Password" %}
                             </label>
-                            {{ form.password }}
-                        </div>
-                        {% csrf_token %}
-                        <div class="flex items-center justify-between"></div>
-                        <button type="submit"
-                                class="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
-                            {% trans "Sign in" %}
-                        </button>
-                        <input type="hidden" name="next" value="{{ next }}">
-                        <a href="#"
-                           class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">{% trans "Forgot password?" %}</a>
-                    </form>
+                            {% component 'toggle_password_input' %}
+                            {% fill "input" %}
+                            {% render_field form.password class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="••••••••" %}
+                        {% endfill %}
+                    {% endcomponent %}
+                    {% for error in form.non_field_errors %}
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ error }}</p>
+                    {% endfor %}
                 </div>
-            </div>
+                {% csrf_token %}
+                <div class="flex items-center justify-between">
+                    <a href="{% url 'authentication:password-reset' %}"
+                       class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">{% trans "Forgot password?" %}</a>
+                </div>
+                <button type="submit"
+                        class="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                    {% trans "Sign in" %}
+                </button>
+                <p class="text-sm font-light text-gray-500 dark:text-gray-400">
+                    {% trans "Don’t have an account yet?" %} <a href="{% url 'authentication:register' %}"
+    class="font-medium text-primary-600 hover:underline dark:text-primary-500">{% trans "Sign up" %}</a>
+                </p>
+                <input type="hidden" name="next" value="{{ next }}">
+            </form>
         </div>
-    </section>
+    </div>
+</div>
+</section>
 {% endblock content %}

@@ -15,6 +15,7 @@ class HtmxMessagesMiddleware:
         response = self.get_response(request)
 
         messages = get_messages(request)
+        print(f"Messages: {messages.__dict__}")
 
         if messages:
             response.write(

@@ -1,0 +1,37 @@
+services:
+  django-server:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        - ENVIRONMENT=develop
+    expose:
+      - 8000
+    command: ./startup.sh
+    env_file:
+      - .env
+    volumes:
+      - static_files:/app/nginx/static
+    networks:
+      - custom-milvus-net
+      - app-net
+  nginx:
+    build:
+      context: ./nginx/
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - static_files:/home/app/static
+    # depends_on:
+    #   - django-server
+    networks:
+      - app-net
+
+volumes:
+  static_files:
+
+networks:
+  custom-milvus-net:
+    external: true
+  app-net:
