@@ -7,8 +7,8 @@ from apps.digest_data.pydantic_models import UserDataFormContext
 class UserDataForm(component.Component):
     template_name = "user_data_form/template.html"
 
-    def get_context_data(self, data_context: UserDataFormContext):
-        return data_context.model_dump()
+    # def get_context_data(self, ):
+    #     return data_context.model_dump()
 
     def get(self, request):
         pass

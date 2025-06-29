@@ -5,9 +5,10 @@ from django_components import component
 class ConfirmationModal(component.Component):
     template_name = "confirmation_modal/template.html"
 
-    def get_context_data(self, title):
+    def get_context_data(self, title, id_="confirmation-modal"):
         return {
             "title": title,
+            "id": id_,
         }
 
     class Media:

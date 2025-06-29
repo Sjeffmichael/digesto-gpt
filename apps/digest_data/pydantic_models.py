@@ -58,10 +58,13 @@ class UserMetadata(BaseModel):
 
     super_user: str = Field(serialization_alias="super_user", alias="super_user")
 
-    name: str = Field(serialization_alias="user_name",alias="user_name",)
+    name: str = Field(
+        serialization_alias="user_name",
+        alias="user_name",
+    )
 
     firstname: str = Field(serialization_alias="user_firstname", alias="user_firstname")
-    
+
     lastname: str = Field(serialization_alias="user_lastname", alias="user_lastname")
 
     date_joined: str = Field(serialization_alias="date_joined", alias="date_joined")
@@ -71,11 +74,13 @@ class UserMetadata(BaseModel):
     active: str = Field(serialization_alias="active", alias="active")
 
     administrator: str = Field(serialization_alias="admin", alias="admin")
-    
+
+
 class LawData(BaseModel):
     id: str
     filename: str
     metadata: LawMetadata
+
 
 class UserData(BaseModel):
     id: int
@@ -84,7 +89,8 @@ class UserData(BaseModel):
     last_name: str
     is_active: bool
     is_admin: bool
-    
+
+
 class LawDataFormContext(BaseModel):
     modal_header: str
     confirm_botton_text: str
@@ -115,6 +121,7 @@ class LawDataTable(BaseModel):
     status: str
     publication_date: Optional[str]
 
+
 class UserDataTable(BaseModel):
     id: int
     password: str
@@ -127,6 +134,7 @@ class UserDataTable(BaseModel):
     email: str
     active: bool
     administrator: bool
+
 
 statuses = [
     "Vigente",

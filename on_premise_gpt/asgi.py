@@ -19,7 +19,7 @@ from common.util.locale import compile_locale_files
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "on_premise_gpt.settings")
 
 # application = get_asgi_application()
-compile_locale_files()
+# compile_locale_files()
 
 application = ProtocolTypeRouter(
     {

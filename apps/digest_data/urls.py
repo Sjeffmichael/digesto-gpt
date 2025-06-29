@@ -1,10 +1,9 @@
 from django.urls import path, re_path
 from django.utils.translation import gettext_lazy as _
 
-from .views import DigestDataCrud, DigestDataForm, DigestDataUserForm, DigestUserDataCrud
+from .views import DigestDataCrud, DigestDataDetailView, DigestDataForm
 
 urlpatterns = [
-    # --- Leyes (Laws) ---
     path(
         "",
         DigestDataCrud.as_view(template_name="digest_data/digest_data_full.html"),
@@ -41,39 +40,9 @@ urlpatterns = [
         ),
         name="update-law-form",
     ),
-
-    # --- Usuarios (Users) ---
     path(
-        "",
-        DigestUserDataCrud.as_view(template_name="user/users_full.html"),
-        name="users-section",
-    ),
-    path(
-        "table",
-        DigestUserDataCrud.as_view(template_name="users/users_table.html"),
-        name="users/table",
-    ),
-    path(
-        "delete/<pk>",
-        DigestUserDataCrud.as_view(template_name="users/users_table.html"),
-        name="delete-user",
-    ),
-    re_path(
-        r"^upsert(?:/(?P<id>\d+))?$",
-        DigestUserDataCrud.as_view(template_name="users/users_table.html"),
-        name="upsert-user",
-    ),
-    path(
-        "upsert_user-form",
-        DigestDataUserForm.as_view(),
-        name="create-user-form",
-    ),
-    path(
-        "upsert-form-user/<str:id>",
-        DigestDataUserForm.as_view(
-            modal_header="Update User",
-            confirm_botton_text="Update User",
-        ),
-        name="update-user-form",
+        "detail/<str:pk>",
+        DigestDataDetailView.as_view(),
+        name="detail-law",
     ),
 ]

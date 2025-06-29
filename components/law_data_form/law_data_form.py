@@ -7,8 +7,8 @@ from apps.digest_data.pydantic_models import LawDataFormContext
 class LawDataForm(component.Component):
     template_name = "law_data_form/template.html"
 
-    def get_context_data(self, data_context: LawDataFormContext):
-        return data_context.model_dump()
+    # def get_context_data(self, context_data):
+    #     return context_data
 
     def get(self, request):
         pass

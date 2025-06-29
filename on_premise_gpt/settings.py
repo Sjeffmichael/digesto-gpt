@@ -14,6 +14,9 @@ import os
 from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
+from dotenv import load_dotenv
+
+load_dotenv(".env", verbose=True, override=True)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,10 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-cmtq$%^v=w^^g4)mcfub$pha5@w$7tps@+-(=q$z3v5(+t-bpo"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = 1  # int(os.environ.get("DEBUG", "1"))
+
+print("debug:", DEBUG)
 
 ALLOWED_HOSTS = [
     "*",
@@ -176,6 +181,8 @@ STATICFILES_DIRS = [
 
 STATIC_URL = "static/"
 
+STATIC_ROOT = BASE_DIR / "nginx/static"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -202,3 +209,12 @@ LOGOUT_REDIRECT_URL = "authentication:login"
 # celery settings
 CELERY_BROKER_URL = "redis://localhost:6379"
 CELERY_RESULT_BACKEND = "redis://localhost:6379"
+
+# Email settings
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.environ.get("EMAIL_HOST")
+EMAIL_PORT = os.environ.get("EMAIL_PORT")
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = int(os.environ.get("EMAIL_USE_TLS", "1"))
+EMAIL_USE_SSL = int(os.environ.get("EMAIL_USE_SSL", "0"))

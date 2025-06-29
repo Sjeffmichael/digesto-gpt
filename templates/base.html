@@ -19,10 +19,10 @@
         <script src="{% url 'javascript-catalog' %}"></script>
     </head>
     <body hx-headers="{'X-CSRFToken': '{{ csrf_token }}'}"
-          class="dark:bg-gray-900"
-          hx-history-elt>
+          class="dark:bg-gray-900">
         {% block content %}
         {% endblock content %}
+        {% component 'toast_notifications' messages=none %}{% endcomponent %}
         <script>
           document.body.addEventListener('htmx:afterSwap', (event) => {
             // Reinitialize Flowbite after swapping an element
@@ -55,7 +55,7 @@
         </script>
         <script>
           function removeSidebarHighlightButton() {
-            document.querySelectorAll('#logo-sidebar > div > ul .bg-gray-100, #logo-sidebar > div > ul .dark\\:bg-gray-700').forEach(btn => btn.classList.remove('bg-gray-100', 'dark:bg-gray-700'));
+            document.querySelectorAll('a.bg-gray-100.dark\\:bg-gray-700').forEach(btn => btn.classList.remove('bg-gray-100', 'dark:bg-gray-700'));
           }
 
           function highlightButton(button) {

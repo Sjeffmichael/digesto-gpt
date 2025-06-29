@@ -3,10 +3,10 @@ import json
 import logging
 import mimetypes
 import os
-import random
-from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, List, Optional
+import sys
 
+import django
 import html2text
 from asgiref.sync import sync_to_async
 from bs4 import BeautifulSoup
@@ -16,15 +16,15 @@ from langchain.globals import set_debug
 from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import CrossEncoderReranker
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-from langchain_core.callbacks import FileCallbackHandler, StdOutCallbackHandler
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import (
     RunnableParallel,
     RunnablePassthrough,
     RunnableSerializable,
+    RunnableLambda,
 )
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface.embeddings import huggingface as hf
@@ -34,18 +34,30 @@ from langchain_milvus.utils.sparse import BaseSparseEmbedding
 from pymilvus import WeightedRanker
 from ragas import EvaluationDataset, evaluate
 from ragas.llms import LangchainLLMWrapper
-from ragas.metrics import LLMContextRecall
+from ragas.metrics import (
+    LLMContextRecall,
+    LLMContextPrecisionWithReference,
+    Faithfulness,
+    ResponseRelevancy,
+)
 from tqdm import tqdm
+from semantic_chunkers import StatisticalChunker
+from semantic_router.encoders import HuggingFaceEncoder
 
-from apps.digest_data.models import Law
+load_dotenv(".env", verbose=True, override=True)
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+MILVUS_URI = os.environ.get("MILVUS_DB_URI")
+MODELS_CHACHE_DIR = os.environ.get("MODELS_CHACHE_DIR")
+EMBEDDINGS_MODEL = os.environ.get("EMBEDDINGS_MODEL")
+RERANKER_MODEL = os.environ.get("RERANKER_MODEL")
 
-load_dotenv(".env")
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "on_premise_gpt.settings")
+django.setup()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+from apps.digest_data.models import Law  # noqa: E402
 
-handler_1 = FileCallbackHandler("/home/michael/dev/on_premise_gpt/logs/rag.log")
-handler_2 = StdOutCallbackHandler()
 
 LAWS_DIR = apps.get_app_config("digest_data").path + "/files/laws"
 
@@ -60,60 +72,124 @@ class CustomSparseEmbedding(BaseSparseEmbedding):
         return texts
 
 
-@dataclass
 class RAG:
 
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash-lite",
-        # model="gemini-2.0-flash",
-        api_key=GEMINI_API_KEY,
-        verbose=True,
-        # callbacks=[cot]
-    )
-    dense_embeddings = hf.HuggingFaceEmbeddings(
-        model_name="intfloat/multilingual-e5-large-instruct",
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True},
-    )
+    def __init__(self):
 
-    dense_field = "dense"
-    dense_metric_type = "COSINE"
-    dense_index_type = "HNSW"
+        self.chunker_encoder = HuggingFaceEncoder(
+            name=EMBEDDINGS_MODEL,
+            tokenizer_kwargs={"cache_dir": MODELS_CHACHE_DIR},
+            model_kwargs={"cache_dir": MODELS_CHACHE_DIR},
+            # device="cuda",
+            device="cpu",
+        )
+        print("Chunker encoder model loaded")
 
-    sparse_field = "sparse"
-    sparse_metric_type = "BM25"
-    sparse_index_type = "SPARSE_INVERTED_INDEX"
+        self.statistical_chunker = StatisticalChunker(
+            self.chunker_encoder,
+            plot_chunks=True,
+            max_split_tokens=500,
+            enable_statistics=True,
+        )
 
-    text_field = "text"
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash-lite",
+            api_key=GEMINI_API_KEY,
+            verbose=True,
+        )
 
-    dense_index_param = {
-        "metric_type": dense_metric_type,
-        "index_type": dense_index_type,
-    }
-    sparse_index_param = {
-        "metric_type": sparse_metric_type,
-        "index_type": sparse_index_type,
-    }
+        # load dense embeddings model for RAG
+        self.dense_embeddings = hf.HuggingFaceEmbeddings(
+            model_name=EMBEDDINGS_MODEL,
+            # model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True},
+            show_progress=True,
+            cache_folder=MODELS_CHACHE_DIR,
+        )
+        # self.dense_embeddings = HuggingFaceInferenceAPIEmbeddings(
+        #     api_key="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",
+        #     model_name=EMBEDDINGS_MODEL,
+        # )
+        print("Dense embeddings model loaded")
 
-    # vector_db = Milvus(
-    #     dense_embeddings,
-    #     auto_id=True,
-    # )
+        # load dense embeddings model for text splitter
+        # self.chunker_encoder = None
 
-    vector_db = Milvus(
-        dense_embeddings,
-        builtin_function=BM25BuiltInFunction(
-            input_field_names=text_field, output_field_names=sparse_field
-        ),
-        index_params=[dense_index_param, sparse_index_param],
-        vector_field=[dense_field, sparse_field],
-        consistency_level="Strong",
-        auto_id=True,
-    )
-    semantic_text_splitter = SemanticChunker(dense_embeddings)
-    recursive_text_splitters = RecursiveCharacterTextSplitter(
-        chunk_size=400, separators=["\n\n", "\n", ".", "?", "!", " ", ""]
-    )
+        # self.statistical_chunker = None
+
+        self.dense_field = "dense"
+        self.dense_metric_type = "COSINE"
+        self.dense_index_type = "HNSW"
+
+        self.sparse_field = "sparse"
+        self.sparse_metric_type = "BM25"
+        self.sparse_index_type = "SPARSE_INVERTED_INDEX"
+
+        self.text_field = "text"
+
+        self.dense_index_param = {
+            "metric_type": self.dense_metric_type,
+            "index_type": self.dense_index_type,
+        }
+        self.sparse_index_param = {
+            "metric_type": self.sparse_metric_type,
+            "index_type": self.sparse_index_type,
+        }
+
+        self.vector_db = Milvus(
+            self.dense_embeddings,
+            builtin_function=BM25BuiltInFunction(
+                input_field_names=self.text_field, output_field_names=self.sparse_field
+            ),
+            index_params=[self.dense_index_param, self.sparse_index_param],
+            vector_field=[self.dense_field, self.sparse_field],
+            consistency_level="Strong",
+            auto_id=True,
+            connection_args={"uri": MILVUS_URI},
+        )
+
+        self.reranker_model = HuggingFaceCrossEncoder(
+            model_name=RERANKER_MODEL,
+            model_kwargs={"cache_dir": MODELS_CHACHE_DIR},
+        )
+
+        self.compressor = CrossEncoderReranker(model=self.reranker_model, top_n=10)
+
+        self.dense_search_params = {"metric_type": self.dense_metric_type, "params": {}}
+        self.sparse_search_params = {"metric_type": self.sparse_metric_type}
+
+        self.hybrid_retriever = None
+        self.compression_retriever = None
+
+        self._initialize_retrievers()
+
+        # self.semantic_text_splitter = SemanticChunker(self.dense_embeddings)
+        # self.recursive_text_splitters = RecursiveCharacterTextSplitter(
+        #     chunk_size=400, separators=["\n\n", "\n", ".", "?", "!", " ", ""]
+        # )
+
+    def _initialize_retrievers(self):
+        if (
+            self.vector_db.col
+            and self.hybrid_retriever is None
+            and self.compression_retriever is None
+        ):
+            self.hybrid_retriever = MilvusCollectionHybridSearchRetriever(
+                collection=self.vector_db.col,
+                rerank=WeightedRanker(0.5, 0.5),
+                field_embeddings=[self.dense_embeddings, CustomSparseEmbedding()],
+                anns_fields=[self.dense_field, self.sparse_field],
+                field_search_params=[
+                    self.dense_search_params,
+                    self.sparse_search_params,
+                ],
+                top_k=100,
+                text_field=self.text_field,
+            )
+
+            self.compression_retriever = ContextualCompressionRetriever(
+                base_compressor=self.compressor, base_retriever=self.hybrid_retriever
+            )
 
     def format_docs(self, docs):
         return "\n\n".join(doc.page_content for doc in docs)
@@ -149,29 +225,26 @@ class RAG:
 
         5. Formato: Utiliza, si es necesario, subtítulos o listas para organizar la información.
 
+        6. Responde en el idioma en que se hace la pregunta.
+
+        7. Por último agrega la o las URL de la información utilizada para responder a la pregunta como referencias, utilizando el siguiente formato:
+        <h2 class="mt-2 text-sm font-semibold text-gray-900 dark:text-white">Referencias:</h2>
+        <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
+            <li>
+                <a href="http://referencia-1" target="_blank" class="font-medium text-blue-600 dark:text-blue-500 hover:underline break-all">http://referencia-1</a>
+            </li>
+            <li>
+                <a href="http://referencia-2" target="_blank" class="font-medium text-blue-600 dark:text-blue-500 hover:underline break-all">http://referencia-2</a>
+            </li>
+        </ul>
+
         Entrada:
         Pregunta: {question}
         Contexto: {context}
         Respuesta:
         """  # noqa: E501
 
-        dense_search_params = {"metric_type": self.dense_metric_type, "params": {}}
-        sparse_search_params = {"metric_type": self.sparse_metric_type}
-        retriever = MilvusCollectionHybridSearchRetriever(
-            collection=self.vector_db.col,
-            rerank=WeightedRanker(0.5, 0.5),
-            field_embeddings=[self.dense_embeddings, CustomSparseEmbedding()],
-            anns_fields=[self.dense_field, self.sparse_field],
-            field_search_params=[dense_search_params, sparse_search_params],
-            top_k=100,
-            text_field=self.text_field,
-        )
-
-        model = HuggingFaceCrossEncoder(model_name="BAAI/bge-reranker-base")
-        compressor = CrossEncoderReranker(model=model, top_n=10)
-        compression_retriever = ContextualCompressionRetriever(
-            base_compressor=compressor, base_retriever=retriever
-        )
+        self._initialize_retrievers()
 
         promp = ChatPromptTemplate.from_template(template)
         rag_chain_from_docs = (
@@ -183,8 +256,14 @@ class RAG:
             | StrOutputParser()
         )
 
+        context_runnable = (
+            self.compression_retriever
+            if self.compression_retriever is not None
+            else RunnableLambda(lambda x: [])
+        )
+
         rag_chain_with_source = RunnableParallel(
-            {"context": compression_retriever, "question": RunnablePassthrough()}
+            {"context": context_runnable, "question": RunnablePassthrough()}
         ).assign(
             answer=rag_chain_from_docs,
             context=lambda x: list(map(dict, x["context"])),
@@ -232,43 +311,49 @@ class RAG:
         dict_context = dict(context)
         return dict_context.get("metadata").get("norma_url")
 
-    def asamble_retriever(self):
+    def generate_dataset(self):
         pass
 
-    def test_accuracy(self):
+    def test_accuracy(self, dataset):
         # read sample data
-        dataset = []
+        # dataset = []
         evaluator_llm = LangchainLLMWrapper(self.llm)
-        with open("fastapi_services/questions_dataset.json") as file:
-            sample_data = json.loads(file.read())
-            random.shuffle(sample_data)
-            for index, data in enumerate(tqdm(sample_data, desc="Evaluating")):
-                question = data.get("question")
-                reference = data.get("answer")
-                if question and reference:
-                    result = self.generate_response(question)
-                    dataset.append(
-                        {
-                            "user_input": question,
-                            "retrieved_contexts": list(
-                                map(lambda x: x["page_content"], result.get("context"))
-                            ),
-                            "response": result.get("answer"),
-                            "reference": reference,
-                        }
-                    )
-                    # if index == 2:
-                    #     break
-            print("_" * 5 + "Dataset" + "_" * 5)
-            print(dataset)
-            evaluation_dataset = EvaluationDataset.from_list(dataset)
-            evaluation_result = evaluate(
-                dataset=evaluation_dataset,
-                metrics=[LLMContextRecall()],
-                llm=evaluator_llm,
-            )
+        # with open("fastapi_services/questions_dataset.json") as file:
+        #     sample_data = json.loads(file.read())
+        #     random.shuffle(sample_data)
+        #     for index, data in enumerate(tqdm(sample_data, desc="Evaluating")):
+        #         question = data.get("question")
+        #         reference = data.get("answer")
+        #         if question and reference:
+        #             result = self.generate_response(question)
+        #             dataset.append(
+        #                 {
+        #                     "user_input": question,
+        #                     "retrieved_contexts": list(
+        #                         map(lambda x: x["page_content"], result.get("context"))
+        #                     ),
+        #                     "response": result.get("answer"),
+        #                     "reference": reference,
+        #                 }
+        #             )
+        #             # if index == 2:
+        #             #     break
+        #     print("_" * 5 + "Dataset" + "_" * 5)
+        #     print(dataset)
+        evaluation_dataset = EvaluationDataset.from_list(dataset)
+        evaluation_result = evaluate(
+            dataset=evaluation_dataset,
+            metrics=[
+                LLMContextRecall(),
+                LLMContextPrecisionWithReference(),
+                Faithfulness(),
+                ResponseRelevancy(),
+            ],
+            llm=evaluator_llm,
+            embeddings=self.dense_embeddings,
+        )
 
-            evaluation_result.to_pandas().to_html("evaluation_result.html")
+        evaluation_result.to_pandas().to_csv("evaluation_result.csv", index=False)
 
     @sync_to_async
     def get_all_laws(self):
@@ -303,6 +388,24 @@ class RAG:
 
             if index == 4:
                 break
+
+    # def load_dataset(self):
+    #     # read dataset
+    #     dataset = read_csv("")
+
+    #     # itter data
+    #     for index, row in dataset.iterrows():
+    #         print(row["query"])
+    #         if index == 0:
+    #             break
+
+    # save data
+
+    def load_db_data(self):
+        pass
+
+    def chunk_text(self, text):
+        pass
 
     def custom_text_splitter(self, html_text):
         # split by article
