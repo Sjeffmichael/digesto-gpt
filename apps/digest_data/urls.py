@@ -59,13 +59,16 @@ urlpatterns = [
         name="delete-user",
     ),
     re_path(
-        r"^upsert(?:/(?P<id>\d+))?$",
+        r"^upsertuser(?:/(?P<id>\d+))?$",
         DigestUserDataCrud.as_view(template_name="users/users_table.html"),
         name="upsert-user",
     ),
     path(
         "upsert_user-form",
-        DigestDataUserForm.as_view(),
+        DigestDataUserForm.as_view(
+            modal_header="Create User",
+            confirm_botton_text="Create User"
+        ),
         name="create-user-form",
     ),
     path(

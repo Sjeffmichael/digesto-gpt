@@ -325,6 +325,9 @@ class DigestUserDataCrud(View):
         return render(request, self.template_name, context)
 
     def post(self, request, id=None, *args, **kwargs):
+        print("Post initialized")
+        if request.htmx and not is_language_switcher_request(request):
+            self.template_name = "users/users_section.html"
         body_data = {key: value[0] for key, value in request.POST.lists()}
         if id is not None:
             try:
@@ -384,16 +387,16 @@ class DigestUserDataCrud(View):
             user_data.append(
                 UserDataTable(
                     id = user.id,
-                    password = user.metadata.get("user_password`"),
-                    last_login = user.metadata.get("last_login"),
-                    super_user = user.metadata.get("super_user"),
-                    name = user.metadata.get("user_name"),
-                    firstname = user.metadata.get("user_firstname"),
-                    lastname = user.metadata.get("user_lastname"),
-                    date_joined = user.metadata.get("date_joined"),
-                    email = user.metadata.get("user_email"),
-                    active = user.metadata.get("user_active"),
-                    administrator = user.metadata.get("administrator"),
+                    password = user.password,
+                    last_login=user.last_login.isoformat() if user.last_login else None,
+                    super_user = user.is_superuser,
+                    name = user.username,
+                    firstname = user.first_name,
+                    lastname = user.last_name,
+                    date_joined=user.date_joined.isoformat() if user.date_joined else None,
+                    email = user.email,
+                    active = user.is_active,
+                    administrator = user.is_admin,
                 )
             )
 
