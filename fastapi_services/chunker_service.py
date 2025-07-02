@@ -39,7 +39,7 @@ from tqdm import tqdm
 from semantic_chunkers import StatisticalChunker
 from semantic_router.encoders import HuggingFaceEncoder
 
-load_dotenv(".env")
+load_dotenv(".env", verbose=True, override=True)
 
 
 # Initialize Django

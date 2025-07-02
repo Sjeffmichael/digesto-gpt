@@ -31,7 +31,7 @@ from django.template.loader import render_to_string
 from apps.digest_data.models import Law
 
 # Set up the Django environment
-load_dotenv(".env")
+load_dotenv(".env", verbose=True, override=True)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "on_premise_gpt.settings")
 django.setup()
 

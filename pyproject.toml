@@ -44,6 +44,8 @@ blinker = "1.7.0"
 selenium-wire = "^5.1.0"
 semantic-chunkers = "^0.0.10"
 matplotlib = "^3.10.3"
+ragatouille = "^0.0.9.post2"
+psutil = "^7.0.0"
 
 [build-system]
 requires = ["poetry-core"]

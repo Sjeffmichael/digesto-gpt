@@ -36,7 +36,7 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 # Now you can import the Law model
 from apps.digest_data.models import Law
 
-load_dotenv(".env")
+load_dotenv(".env", verbose=True, override=True)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "on_premise_gpt.settings")
 django.setup()
 

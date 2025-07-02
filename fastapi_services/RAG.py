@@ -3,7 +3,7 @@ import json
 import logging
 import mimetypes
 import os
-from typing import Any, List, Optional
+from typing import Any, List
 import sys
 
 import django
@@ -15,8 +15,6 @@ from dotenv import load_dotenv
 from langchain.globals import set_debug
 from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers import ContextualCompressionRetriever
-from langchain.retrievers.document_compressors import CrossEncoderReranker
-from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import (
     RunnableParallel,
@@ -24,14 +22,12 @@ from langchain_core.runnables import (
     RunnableSerializable,
     RunnableLambda,
 )
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-from langchain_experimental.text_splitter import SemanticChunker
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface.embeddings import huggingface as hf
 from langchain_milvus import BM25BuiltInFunction, Milvus
 from langchain_milvus.retrievers import MilvusCollectionHybridSearchRetriever
 from langchain_milvus.utils.sparse import BaseSparseEmbedding
-from pymilvus import WeightedRanker
+from pymilvus import WeightedRanker, RRFRanker
 from ragas import EvaluationDataset, evaluate
 from ragas.llms import LangchainLLMWrapper
 from ragas.metrics import (
@@ -43,6 +39,7 @@ from ragas.metrics import (
 from tqdm import tqdm
 from semantic_chunkers import StatisticalChunker
 from semantic_router.encoders import HuggingFaceEncoder
+from ragatouille import RAGPretrainedModel
 
 load_dotenv(".env", verbose=True, override=True)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -76,22 +73,6 @@ class RAG:
 
     def __init__(self):
 
-        self.chunker_encoder = HuggingFaceEncoder(
-            name=EMBEDDINGS_MODEL,
-            tokenizer_kwargs={"cache_dir": MODELS_CHACHE_DIR},
-            model_kwargs={"cache_dir": MODELS_CHACHE_DIR},
-            # device="cuda",
-            device="cpu",
-        )
-        print("Chunker encoder model loaded")
-
-        self.statistical_chunker = StatisticalChunker(
-            self.chunker_encoder,
-            plot_chunks=True,
-            max_split_tokens=500,
-            enable_statistics=True,
-        )
-
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash-lite",
             api_key=GEMINI_API_KEY,
@@ -106,16 +87,8 @@ class RAG:
             show_progress=True,
             cache_folder=MODELS_CHACHE_DIR,
         )
-        # self.dense_embeddings = HuggingFaceInferenceAPIEmbeddings(
-        #     api_key="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",
-        #     model_name=EMBEDDINGS_MODEL,
-        # )
+
         print("Dense embeddings model loaded")
-
-        # load dense embeddings model for text splitter
-        # self.chunker_encoder = None
-
-        # self.statistical_chunker = None
 
         self.dense_field = "dense"
         self.dense_metric_type = "COSINE"
@@ -148,12 +121,7 @@ class RAG:
             connection_args={"uri": MILVUS_URI},
         )
 
-        self.reranker_model = HuggingFaceCrossEncoder(
-            model_name=RERANKER_MODEL,
-            model_kwargs={"cache_dir": MODELS_CHACHE_DIR},
-        )
-
-        self.compressor = CrossEncoderReranker(model=self.reranker_model, top_n=10)
+        self.reranker_model = RAGPretrainedModel.from_pretrained(RERANKER_MODEL)
 
         self.dense_search_params = {"metric_type": self.dense_metric_type, "params": {}}
         self.sparse_search_params = {"metric_type": self.sparse_metric_type}
@@ -163,11 +131,6 @@ class RAG:
 
         self._initialize_retrievers()
 
-        # self.semantic_text_splitter = SemanticChunker(self.dense_embeddings)
-        # self.recursive_text_splitters = RecursiveCharacterTextSplitter(
-        #     chunk_size=400, separators=["\n\n", "\n", ".", "?", "!", " ", ""]
-        # )
-
     def _initialize_retrievers(self):
         if (
             self.vector_db.col
@@ -176,7 +139,7 @@ class RAG:
         ):
             self.hybrid_retriever = MilvusCollectionHybridSearchRetriever(
                 collection=self.vector_db.col,
-                rerank=WeightedRanker(0.5, 0.5),
+                rerank=RRFRanker(),
                 field_embeddings=[self.dense_embeddings, CustomSparseEmbedding()],
                 anns_fields=[self.dense_field, self.sparse_field],
                 field_search_params=[
@@ -188,7 +151,10 @@ class RAG:
             )
 
             self.compression_retriever = ContextualCompressionRetriever(
-                base_compressor=self.compressor, base_retriever=self.hybrid_retriever
+                base_compressor=self.reranker_model.as_langchain_document_compressor(
+                    10
+                ),
+                base_retriever=self.hybrid_retriever,
             )
 
     def format_docs(self, docs):
@@ -196,7 +162,7 @@ class RAG:
 
     def get_runnable(self) -> RunnableSerializable[Any, Any]:
         # set_verbose(True)
-        set_debug(True)
+        # set_debug(True)
         template = """
         Eres un abogado experto en análisis del Digesto Jurídico Nicaragüense. Tu objetivo es proporcionar respuestas precisas y completas a las consultas legales sobre Nicaragua, utilizando el Digesto Jurídico como única fuente de información.
         El contexto contiene extractos relevantes del Digesto Jurídico Nicaragüense.
@@ -262,12 +228,14 @@ class RAG:
             else RunnableLambda(lambda x: [])
         )
 
+        print(context_runnable)
+
         rag_chain_with_source = RunnableParallel(
             {"context": context_runnable, "question": RunnablePassthrough()}
         ).assign(
             answer=rag_chain_from_docs,
-            context=lambda x: list(map(dict, x["context"])),
-            references_url=lambda x: list(map(self.get_references_url, x["context"])),
+            context=lambda x: list(map(dict, x.get("context"))),
+            # references_url=lambda x: list(map(self.get_references_url, x["context"])),
         )
 
         return rag_chain_with_source

@@ -41,7 +41,7 @@ from utils.custler_semantic_chunker import ClusterSemanticChunker
 from tqdm import tqdm
 from semantic_chunkers import StatisticalChunker
 
-load_dotenv(".env")
+load_dotenv(".env", verbose=True, override=True)
 
 # Initialize Django
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -312,64 +312,6 @@ async def chunk_and_save_dataset(request: Request):
                 # await rag_service.vector_db.aadd_texts(chunks)
                 # if index == 0:
                 #     break
-    except Exception as e:
-        logging.error(e, stack_info=True, exc_info=True)
-
-
-@app.post("/chunk-and-save-text")
-async def chunk_and_save_text(request: Request):
-    try:
-
-        not_proccessed_laws = await get_not_proccessed_laws()
-        for law in tqdm(not_proccessed_laws, "Laws"):
-            with open(os.path.join(LAWS_DIR, law.filename)) as law_file:
-                soup = BeautifulSoup(law_file.read(), "html.parser")
-                chunker = StatisticalChunker(
-                    rag_service.chunker_encoder,
-                    plot_chunks=False,
-                    max_split_tokens=500,
-                    enable_statistics=True,
-                )
-
-                chunks = chunker(docs=[soup.text])
-
-                del chunker
-                metadata_str = ""
-                for key, value in law.metadata.items():
-                    metadata_str += "{key}: {value}\n".format(
-                        key=key.replace("_", " ").replace("norma ", "").capitalize(),
-                        value=value,
-                    )
-
-                # embbed metadata into text
-                text_chunks = []
-                for index_2 in range(len(chunks[0])):
-                    frament_number = index_2 + 1
-                    metadata_str2 = metadata_str + "Fragmento: {}\n".format(
-                        frament_number
-                    )
-                    text_chunks.append(
-                        TextChunk(
-                            fragment_number=frament_number,
-                            content=metadata_str2 + " ".join(chunks[0][index_2].splits),
-                            law=law,
-                        )
-                    )
-
-            await save_chunks_batch(text_chunks)
-            await update_proccessed_law(law.id)
-
-            # with open("logs/chunks.log", "w") as f:
-            #     with redirect_stdout(f):
-            # print("hola mundo")
-            # rag_service.statistical_chunker.print(chunks[0])
-            # pass
-            # rag_service.statistical_chunker.print(chunks[0])
-
-            # await rag_service.vector_db.aadd_texts(chunks)
-            # if index == 0:
-            #     break
-            # break
     except Exception as e:
         logging.error(e, stack_info=True, exc_info=True)
 

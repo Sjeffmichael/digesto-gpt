@@ -15,6 +15,10 @@ services:
     networks:
       - custom-milvus-net
       - app-net
+    depends_on:
+      - db
+      - nginx
+
   nginx:
     build:
       context: ./nginx/
@@ -23,10 +27,22 @@ services:
     volumes:
       - ./nginx/conf.d/:/etc/nginx/conf.d/
       - static_files:/home/app/static
-    # depends_on:
-    #   - django-server
     networks:
       - app-net
+
+  db:
+    container_name: postgres_db
+    hostname: postgres.db
+    image: postgres:alpine
+    restart: on-failure:2
+    networks:
+      - app-net
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
 volumes:
   static_files:

@@ -11,7 +11,7 @@ class ResponseGenerator:
             "GET",
             "http://localhost:8080/generate-response",
             data=json.dumps({"input_message": input_message, "message_id": message_id}),
-            timeout=60,
+            timeout=80,
         ) as r:
             for chunk in r.iter_raw():
                 yield chunk.decode()

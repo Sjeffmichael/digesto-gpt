@@ -1,11 +1,11 @@
-import asyncio
 import json
+import logging
+import time
 import uuid
 from urllib.parse import urlparse
 
 # isort: off
 from channels.generic.websocket import (
-    AsyncWebsocketConsumer,
     WebsocketConsumer,
 )
 from django.template.loader import render_to_string
@@ -43,10 +43,10 @@ class ChatConsumer(WebsocketConsumer):
                 # create new conversation
                 id_ = uuid.uuid4().hex
                 user = User.objects.get(email=email)
-                conversation_title = "Test Title"
-                # self.response_generator.generate_title(
-                #     message,
-                # )
+                # conversation_title = "Test Title"
+                conversation_title = self.response_generator.generate_title(
+                    message,
+                )
 
                 conversation = Conversation.objects.create(
                     slug=id_,
@@ -79,18 +79,18 @@ class ChatConsumer(WebsocketConsumer):
             user_message_html = render_to_string(
                 "chats/user_message.html",
                 {
-                    "id": "msg_id_" + id_,
+                    "id": id_,
                     "user_email": email,
                     "message": {
                         "user_message": created_messages.user_message,
+                        "id": created_messages.id,
                     },
                 },
             )
             self.send(user_message_html)
             tokens = ""
 
-            references_url = ""
-
+            start_time = time.time()
             for chunk in self.response_generator.generate_response(
                 message, created_messages.id
             ):
@@ -99,22 +99,23 @@ class ChatConsumer(WebsocketConsumer):
                     tokens += token.get("answer")
                     template_p = render_to_string(
                         "chats/bot_message_token.html",
-                        {"id": "msg_id_" + id_, "token": tokens},
+                        {"id": created_messages.id, "token": tokens},
                     )
                     self.send(template_p)
-                elif token.get("references_url"):
-                    references_list = token.get("references_url")
-                    references_url = render_to_string(
-                        "chats/references_url_list.html",
-                        {"id": "msg_id_" + id_, "urls": references_list},
-                    )
-
-            self.send(references_url)
+                # elif token.get("references_url"):
+                #     references_list = token.get("references_url")
+                #     references_url = render_to_string(
+                #         "chats/references_url_list.html",
+                #         {"id": id_, "urls": references_list},
+                #     )
+            print("Generate response duration: ", time.time() - start_time)
+            # self.send(references_url)
 
             created_messages.bot_message = tokens
-            created_messages.references = str(references_list)
+            # created_messages.references = str(references_list)
             created_messages.save()
         except Exception as e:
+            logging.error(f"Error in ChatConsumer: {e}", exc_info=True, stack_info=True)
             self.send(
                 ToastNotifications.render(
                     kwargs={
