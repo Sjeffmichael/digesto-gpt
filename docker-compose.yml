@@ -43,10 +43,13 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     command: [ "postgres", "-c", "listen_addresses=*"]
 
 volumes:
   static_files:
+  postgres_data:
 
 networks:
   app-net:
