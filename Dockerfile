@@ -34,7 +34,7 @@ RUN poetry install --no-directory --no-root
 COPY . /app
 
 #  Apply migrations
-RUN python manage.py makemigrations
+RUN python manage.py migrate --noinput
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
