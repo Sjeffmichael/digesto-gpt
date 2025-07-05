@@ -45,6 +45,7 @@ load_dotenv(".env", verbose=True, override=True)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 MILVUS_URI = os.environ.get("MILVUS_DB_URI")
+MILVUS_TOKEN = os.environ.get("MILVUS_DB_TOKEN")
 MODELS_CHACHE_DIR = os.environ.get("MODELS_CHACHE_DIR")
 EMBEDDINGS_MODEL = os.environ.get("EMBEDDINGS_MODEL")
 RERANKER_MODEL = os.environ.get("RERANKER_MODEL")
@@ -85,7 +86,7 @@ class RAG:
             # model_kwargs={"device": "cpu"},
             encode_kwargs={"normalize_embeddings": True},
             show_progress=True,
-            cache_folder=MODELS_CHACHE_DIR,
+            # cache_folder=MODELS_CHACHE_DIR,
         )
 
         print("Dense embeddings model loaded")
@@ -118,7 +119,7 @@ class RAG:
             vector_field=[self.dense_field, self.sparse_field],
             consistency_level="Strong",
             auto_id=True,
-            connection_args={"uri": MILVUS_URI},
+            connection_args={"uri": MILVUS_URI, "token": MILVUS_TOKEN},
         )
 
         self.reranker_model = RAGPretrainedModel.from_pretrained(RERANKER_MODEL)
@@ -193,7 +194,9 @@ class RAG:
 
         6. Responde en el idioma en que se hace la pregunta.
 
-        7. Por último agrega la o las URL de la información utilizada para responder a la pregunta como referencias, utilizando el siguiente formato:
+        7. Cuando utilices información de documentos, que esten derogados, sean derecho historico o sin vigencia, aclaralo en la respuesta.
+
+        8. Por último agrega la o las URL de la información utilizada para responder a la pregunta como referencias, utilizando el siguiente formato:
         <h2 class="mt-2 text-sm font-semibold text-gray-900 dark:text-white">Referencias:</h2>
         <ul class="max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
             <li>

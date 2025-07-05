@@ -37,7 +37,7 @@
            hx-push-url="true"
            hx-history="false"
            id="{{ slug }}"
-           class="cursor-pointer flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 {% if current_section == slug %}bg-gray-100 dark:bg-gray-700{% endif %}"
+           class="cursor-pointer flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700 bg-gray-100 dark:bg-gray-700"
            onclick="highlightButton(this)"
            data-popover-target="popover-{{ slug }}"
            data-popover-placement="right">
@@ -73,7 +73,7 @@
             <ul class="py-2 text-sm text-gray-700 dark:text-gray-200"
                 aria-labelledby="dropdownMenuIconButton">
                 <li>
-                    <a class="cursor-pointer block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                    <a class="cursor-pointer flex px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                        data-modal-target="confirmation-modal-delete-conversation"
                        data-modal-toggle="confirmation-modal-delete-conversation"
                        hx-trigger="confirmed"

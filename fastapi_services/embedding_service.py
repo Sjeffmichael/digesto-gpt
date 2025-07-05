@@ -36,10 +36,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from contextlib import redirect_stdout
 
-from fastapi_services.RAG import RAG
-from utils.custler_semantic_chunker import ClusterSemanticChunker
+from .RAG import RAG
 from tqdm import tqdm
-from semantic_chunkers import StatisticalChunker
+
 
 load_dotenv(".env", verbose=True, override=True)
 
@@ -148,71 +147,6 @@ def delete_all_from_db():
 
 DIGEST_FILES_DIR = apps.get_app_config("digest_data").path + "/files"
 LAWS_DIR = DIGEST_FILES_DIR + "/laws"
-
-
-@app.post("/chunk-and-save")
-async def chunk_and_save(request: Request):
-
-    text_splitter = ClusterSemanticChunker(
-        embedding_function=rag_service.dense_embeddings.embed_documents
-    )
-
-    laws = await get_all_laws()
-    for index, law in enumerate(laws):
-        extension = mimetypes.guess_extension(mimetypes.guess_type(law.filename)[0])
-        try:
-            with open(os.path.join(LAWS_DIR, law.id + extension)) as law_file:
-                text = html2text.html2text(law_file.read())
-
-                law.metadata.pop("norma_archivos_relacionados")
-
-                chunks = text_splitter.create_documents([text])
-                # embbed metadata into text
-                for index_2, _ in enumerate(chunks):
-                    chunks[index_2].page_content = (
-                        "Número de la norma: {norma_numero}\n"
-                        "Título: {norma_titulo}\n"
-                        "Materia: {norma_materia}\n"
-                        "Estado: {norma_estado}\n"
-                        "Categoría: {norma_categoria}\n"
-                        "Rango: {norma_rango}\n"
-                        "Fecha publicación: {norma_fecha_publicacion}\n"
-                        "Fecha aprobación: {norma_fecha_aprobacion}\n"
-                        "URL: {norma_url}\n"
-                        "{page_content}"
-                    ).format(
-                        norma_numero=law.metadata.get("norma_numero"),
-                        norma_titulo=law.metadata.get("norma_titulo"),
-                        norma_materia=law.metadata.get("norma_materia"),
-                        norma_estado=law.metadata.get("norma_estado"),
-                        norma_categoria=law.metadata.get("norma_categoria"),
-                        norma_rango=law.metadata.get("norma_rango"),
-                        norma_fecha_publicacion=law.metadata.get(
-                            "norma_fecha_publicacion"
-                        ),
-                        norma_fecha_aprobacion=law.metadata.get(
-                            "norma_fecha_aprobacion"
-                        ),
-                        norma_url=law.metadata.get("norma_url"),
-                        page_content=chunks[index_2].page_content,
-                    )
-
-                    if index_2 == 1:
-                        print(chunks[index_2])
-
-                Milvus.from_documents(
-                    chunks,
-                    rag_service.dense_embeddings,
-                    connection_args={"host": "127.0.0.1", "port": "19530"},
-                )
-
-        except Exception as e:
-            logging.error(e, stack_info=True, exc_info=True)
-
-        if index == 4:
-            break
-
-    return JSONResponse(content={"status": 1})
 
 
 @sync_to_async

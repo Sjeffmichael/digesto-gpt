@@ -11,6 +11,7 @@ from channels.generic.websocket import (
 from django.template.loader import render_to_string
 from django.utils.lorem_ipsum import words
 from django.contrib.messages import DEFAULT_LEVELS
+from django.middleware.csrf import get_token
 
 from apps.user_authentication.models import User
 
@@ -25,12 +26,15 @@ class ChatConsumer(WebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.response_generator = ResponseGenerator()
+        print("ChatConsumer initialized ", args, kwargs)
+        # self.csrf_token = get_token(self.scope["session"])
 
     def connect(self):
         self.accept()
 
     def receive(self, text_data=None, bytes_data=None):
         try:
+
             text_data_json = json.loads(text_data)
             headers = text_data_json.get("HEADERS")
             message = text_data_json.get("message")
@@ -38,6 +42,7 @@ class ChatConsumer(WebsocketConsumer):
             parsed_url = urlparse(current_url)
             email = self.scope.get("user")
             id_ = ""
+            # csfr_token = get_token(self.scope)
             conversation = None
             if not parsed_url.path.replace("/", ""):
                 # create new conversation
@@ -63,6 +68,7 @@ class ChatConsumer(WebsocketConsumer):
                         "title": conversation_title,
                         "slug": id_,
                         "created_date": conversation.created_date,
+                        "csrf_token": self.scope["cookies"]["csrftoken"],
                     },
                 )
                 self.send(chat_title)
@@ -102,17 +108,10 @@ class ChatConsumer(WebsocketConsumer):
                         {"id": created_messages.id, "token": tokens},
                     )
                     self.send(template_p)
-                # elif token.get("references_url"):
-                #     references_list = token.get("references_url")
-                #     references_url = render_to_string(
-                #         "chats/references_url_list.html",
-                #         {"id": id_, "urls": references_list},
-                #     )
+
             print("Generate response duration: ", time.time() - start_time)
-            # self.send(references_url)
 
             created_messages.bot_message = tokens
-            # created_messages.references = str(references_list)
             created_messages.save()
         except Exception as e:
             logging.error(f"Error in ChatConsumer: {e}", exc_info=True, stack_info=True)

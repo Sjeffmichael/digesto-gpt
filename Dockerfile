@@ -14,7 +14,14 @@ ENV POETRY_NO_INTERACTION=1 \
     POETRY_HOME='/usr/local'
 
 RUN pip3 install --upgrade pip
-RUN apt-get update && apt-get install -y curl gettext && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    curl \
+    gettext \
+    git \
+    build-essential \
+    g++ \
+    ninja-build \
+    && rm -rf /var/lib/apt/lists/*
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
 # Ensure Poetry is on PATH
@@ -28,5 +35,8 @@ COPY . /app
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
+
+# Compile translations
+RUN django-admin compilemessages --ignore=env
 
 RUN chmod +x startup.sh

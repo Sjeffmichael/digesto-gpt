@@ -17,7 +17,6 @@ services:
       - app-net
     depends_on:
       - db
-      - nginx
 
   nginx:
     build:
@@ -29,6 +28,8 @@ services:
       - static_files:/home/app/static
     networks:
       - app-net
+    depends_on:
+      - django-server
 
   db:
     container_name: postgres_db
@@ -43,6 +44,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    command: [ "postgres", "-c", "listen_addresses=*"]
 
 volumes:
   static_files:
