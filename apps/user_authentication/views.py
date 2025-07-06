@@ -94,7 +94,7 @@ def register_user(request):
             )
 
             login(request, user)
-            return HttpResponseRedirect(reverse_lazy("chats:chat-section"))
+            return HttpResponseClientRedirect(reverse_lazy("chats:chat-section"))
         else:
             context = {"form": form}
             response = render(request, "user_authentication/register.html", context)
