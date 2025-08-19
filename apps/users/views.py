@@ -102,24 +102,48 @@ class UserListView(ListView, SearchMixin, PaginationMixin):
         return self.render_to_response(*args, **kwargs)
 
 
-class UserUpdateView(UpdateView):
+class UserUpdateView(UpdateView, SearchMixin, PaginationMixin):
     model = User
-    template_name = "users/user_update_form.html"
+    template_name = "users/users_section.html"
     form_class = UserDataForm
 
-    # def get_success_url(self):
-    #     return self.request.path
+    def get_context_data(self, **kwargs):
 
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     context["csrf_token"] = get_token(self.request)
-    #     return context
+        return self.get_pagination_data()
+
+    def patch(self, request, *args, **kwargs):
+        body_data = QueryDict(request.body)
+        status = body_data.get("status")
+        role = body_data.get("role", "chatbot_user")
+        self.object = self.get_object()
+
+        self.object.is_active = status == "true"
+        self.object.is_admin = role == "Admin"
+        self.object.save()
+
+        # add_message(request, messages.SUCCESS, _("User updated successfully"))
+        add_message(request, messages.SUCCESS, _("Usuario actualizado correctamente"))
+
+        # if not self.object.is_active:
+        #     add_message(request, messages.ERROR, _("User already inactive"))
+        # else:
+        #     self.object.is_active = False
+        #     self.object.save()  # Soft delete by setting is_active to False
+        #     add_message(request, messages.SUCCESS, _("User deactivated successfully"))
+
+        return self.response_class(
+            request=self.request,
+            template=self.template_name,
+            context=self.get_context_data(),
+            using=self.template_engine,
+        )
 
 
 class UserDetailView(DetailView):
     model = User
 
     def render_to_response(self, context):
+        context.update(**{"csrf_token": get_token(self.request)})
         return UserDataForm.render_to_response(context)
 
 
@@ -136,11 +160,11 @@ class UserDeleteView(DeleteView, SearchMixin, PaginationMixin):
         self.object = self.get_object()
 
         if not self.object.is_active:
-            add_message(request, messages.ERROR, "User already inactive")
+            add_message(request, messages.ERROR, _("User already inactive"))
         else:
             self.object.is_active = False
             self.object.save()  # Soft delete by setting is_active to False
-            add_message(request, messages.SUCCESS, "User deactivated successfully")
+            add_message(request, messages.SUCCESS, _("User deactivated successfully"))
 
         return self.response_class(
             request=self.request,

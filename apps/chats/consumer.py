@@ -66,7 +66,7 @@ class ChatConsumer(WebsocketConsumer):
                     "chats/conversations_list_item.html",
                     {
                         "title": conversation_title,
-                        "slug": id_,
+                        # "slug": id_,
                         "created_date": conversation.created_date,
                         "csrf_token": self.scope["cookies"]["csrftoken"],
                     },
@@ -100,14 +100,22 @@ class ChatConsumer(WebsocketConsumer):
             for chunk in self.response_generator.generate_response(
                 message, created_messages.id
             ):
-                token = json.loads(chunk)
-                if token.get("answer"):
-                    tokens += token.get("answer")
-                    template_p = render_to_string(
-                        "chats/bot_message_token.html",
-                        {"id": created_messages.id, "token": tokens},
+                try:
+
+                    token = json.loads(chunk)
+                    if token.get("answer"):
+                        tokens += token.get("answer")
+                        template_p = render_to_string(
+                            "chats/bot_message_token.html",
+                            {"id": created_messages.id, "token": tokens},
+                        )
+                        self.send(template_p)
+                except json.JSONDecodeError as e:
+                    logging.error(f"Corrupted JSON chunk received: {chunk}")
+                    logging.error(
+                        f"JSON decode error: {e}", exc_info=True, stack_info=True
                     )
-                    self.send(template_p)
+                    continue
 
             print("Generate response duration: ", time.time() - start_time)
 

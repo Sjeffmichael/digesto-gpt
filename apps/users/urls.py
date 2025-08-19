@@ -7,37 +7,18 @@ from .views import (
     UserDeleteView,
     UserDetailView,
     UserListView,
+    UserUpdateView,
 )
 
 app_name = "users"
 
 urlpatterns = [
     path("", UserListView.as_view(), name="users-section"),
-    # path(
-    #     "",
-    #     UserDataCrud.as_view(template_name="user/users_full.html"),
-    #     name="users-section",
-    # ),
-    # path(
-    #     "table",
-    #     UserDataCrud.as_view(template_name="users/users_table.html"),
-    #     name="users/table",
-    # ),
-    # path(
-    #     "delete/<pk>",
-    #     UserDataCrud.as_view(template_name="users/users_table.html"),
-    #     name="delete-user",
-    # ),
     path(
         "delete/<int:pk>",
         UserDeleteView.as_view(),
         name="delete-user",
     ),
-    # re_path(
-    #     r"^upsert(?:/(?P<id>\d+))?$",
-    #     UserDataCrud.as_view(template_name="users/users_table.html"),
-    #     name="upsert-user",
-    # ),
     path(
         "upsert_user-form",
         UserDataFormView.as_view(),
@@ -55,5 +36,10 @@ urlpatterns = [
         "detail/<int:pk>",
         UserDetailView.as_view(),
         name="user-detail",
+    ),
+    path(
+        "update/<int:pk>",
+        UserUpdateView.as_view(),
+        name="update-user",
     ),
 ]

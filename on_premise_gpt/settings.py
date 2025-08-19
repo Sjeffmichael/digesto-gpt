@@ -228,3 +228,8 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = int(os.environ.get("EMAIL_USE_TLS", "1"))
 EMAIL_USE_SSL = int(os.environ.get("EMAIL_USE_SSL", "0"))
+
+# SSL settings
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    CSRF_TRUSTED_ORIGINS = ["https://digestogpt.works"]

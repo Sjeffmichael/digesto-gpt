@@ -12,9 +12,10 @@ from asgiref.sync import sync_to_async
 from bs4 import BeautifulSoup
 from django.apps import apps
 from dotenv import load_dotenv
-from langchain.globals import set_debug
+from langchain.globals import set_debug, set_verbose
 from langchain.prompts import ChatPromptTemplate
-from langchain.retrievers import ContextualCompressionRetriever
+
+# from langchain.retrievers import ContextualCompressionRetriever
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import (
     RunnableParallel,
@@ -27,7 +28,7 @@ from langchain_huggingface.embeddings import huggingface as hf
 from langchain_milvus import BM25BuiltInFunction, Milvus
 from langchain_milvus.retrievers import MilvusCollectionHybridSearchRetriever
 from langchain_milvus.utils.sparse import BaseSparseEmbedding
-from pymilvus import WeightedRanker, RRFRanker
+from pymilvus import RRFRanker
 from ragas import EvaluationDataset, evaluate
 from ragas.llms import LangchainLLMWrapper
 from ragas.metrics import (
@@ -39,7 +40,6 @@ from ragas.metrics import (
 from tqdm import tqdm
 from semantic_chunkers import StatisticalChunker
 from semantic_router.encoders import HuggingFaceEncoder
-from ragatouille import RAGPretrainedModel
 
 load_dotenv(".env", verbose=True, override=True)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -48,7 +48,6 @@ MILVUS_URI = os.environ.get("MILVUS_DB_URI")
 MILVUS_TOKEN = os.environ.get("MILVUS_DB_TOKEN")
 MODELS_CHACHE_DIR = os.environ.get("MODELS_CHACHE_DIR")
 EMBEDDINGS_MODEL = os.environ.get("EMBEDDINGS_MODEL")
-RERANKER_MODEL = os.environ.get("RERANKER_MODEL")
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "on_premise_gpt.settings")
@@ -86,10 +85,8 @@ class RAG:
             # model_kwargs={"device": "cpu"},
             encode_kwargs={"normalize_embeddings": True},
             show_progress=True,
-            # cache_folder=MODELS_CHACHE_DIR,
+            cache_folder=MODELS_CHACHE_DIR,
         )
-
-        print("Dense embeddings model loaded")
 
         self.dense_field = "dense"
         self.dense_metric_type = "COSINE"
@@ -122,22 +119,16 @@ class RAG:
             connection_args={"uri": MILVUS_URI, "token": MILVUS_TOKEN},
         )
 
-        self.reranker_model = RAGPretrainedModel.from_pretrained(RERANKER_MODEL)
-
         self.dense_search_params = {"metric_type": self.dense_metric_type, "params": {}}
         self.sparse_search_params = {"metric_type": self.sparse_metric_type}
 
         self.hybrid_retriever = None
-        self.compression_retriever = None
 
         self._initialize_retrievers()
 
     def _initialize_retrievers(self):
-        if (
-            self.vector_db.col
-            and self.hybrid_retriever is None
-            and self.compression_retriever is None
-        ):
+        print(self.vector_db.col)
+        if self.vector_db.col and self.hybrid_retriever is None:
             self.hybrid_retriever = MilvusCollectionHybridSearchRetriever(
                 collection=self.vector_db.col,
                 rerank=RRFRanker(),
@@ -147,19 +138,15 @@ class RAG:
                     self.dense_search_params,
                     self.sparse_search_params,
                 ],
-                top_k=100,
+                top_k=10,
                 text_field=self.text_field,
-            )
-
-            self.compression_retriever = ContextualCompressionRetriever(
-                base_compressor=self.reranker_model.as_langchain_document_compressor(
-                    10
-                ),
-                base_retriever=self.hybrid_retriever,
             )
 
     def format_docs(self, docs):
         return "\n\n".join(doc.page_content for doc in docs)
+
+    def get_detailed_instruct(self, query: str) -> str:
+        return f"Instruct: Dada la siguiente consulta legal, extrae los fragmentos relevantes para responder la consulta\nQuery: {query}"  # noqa: E501
 
     def get_runnable(self) -> RunnableSerializable[Any, Any]:
         # set_verbose(True)
@@ -188,11 +175,13 @@ class RAG:
 
             - Nunca inventes información que no esté en el contexto.
 
+            - No brindes las referencias si no utilizas información del contexto proporcionado.
+
         4. Extensión: Mantén las respuestas concisas y completas, entre 50 y 150 palabras.
 
         5. Formato: Utiliza, si es necesario, subtítulos o listas para organizar la información.
 
-        6. Responde en el idioma en que se hace la pregunta.
+        6. Genera la respuesta en el idioma en que se hace la pregunta, si se te pregunta en español responde en español, si te pregunta en ingles responde en ingles.
 
         7. Cuando utilices información de documentos, que esten derogados, sean derecho historico o sin vigencia, aclaralo en la respuesta.
 
@@ -225,20 +214,17 @@ class RAG:
             | StrOutputParser()
         )
 
-        context_runnable = (
-            self.compression_retriever
-            if self.compression_retriever is not None
+        context_runnable = RunnableLambda(lambda x: self.get_detailed_instruct(x)) | (
+            self.hybrid_retriever
+            if self.hybrid_retriever is not None
             else RunnableLambda(lambda x: [])
         )
-
-        print(context_runnable)
 
         rag_chain_with_source = RunnableParallel(
             {"context": context_runnable, "question": RunnablePassthrough()}
         ).assign(
             answer=rag_chain_from_docs,
             context=lambda x: list(map(dict, x.get("context"))),
-            # references_url=lambda x: list(map(self.get_references_url, x["context"])),
         )
 
         return rag_chain_with_source
@@ -286,31 +272,9 @@ class RAG:
         pass
 
     def test_accuracy(self, dataset):
-        # read sample data
-        # dataset = []
+
         evaluator_llm = LangchainLLMWrapper(self.llm)
-        # with open("fastapi_services/questions_dataset.json") as file:
-        #     sample_data = json.loads(file.read())
-        #     random.shuffle(sample_data)
-        #     for index, data in enumerate(tqdm(sample_data, desc="Evaluating")):
-        #         question = data.get("question")
-        #         reference = data.get("answer")
-        #         if question and reference:
-        #             result = self.generate_response(question)
-        #             dataset.append(
-        #                 {
-        #                     "user_input": question,
-        #                     "retrieved_contexts": list(
-        #                         map(lambda x: x["page_content"], result.get("context"))
-        #                     ),
-        #                     "response": result.get("answer"),
-        #                     "reference": reference,
-        #                 }
-        #             )
-        #             # if index == 2:
-        #             #     break
-        #     print("_" * 5 + "Dataset" + "_" * 5)
-        #     print(dataset)
+
         evaluation_dataset = EvaluationDataset.from_list(dataset)
         evaluation_result = evaluate(
             dataset=evaluation_dataset,
@@ -359,59 +323,3 @@ class RAG:
 
             if index == 4:
                 break
-
-    # def load_dataset(self):
-    #     # read dataset
-    #     dataset = read_csv("")
-
-    #     # itter data
-    #     for index, row in dataset.iterrows():
-    #         print(row["query"])
-    #         if index == 0:
-    #             break
-
-    # save data
-
-    def load_db_data(self):
-        pass
-
-    def chunk_text(self, text):
-        pass
-
-    def custom_text_splitter(self, html_text):
-        # split by article
-        soup = BeautifulSoup(html_text, "html.parser")
-        articles = soup.find_all("div", class_="hcontainer article", recursive=True)
-        split_result = []
-
-        # container title
-        # container preamble
-        # container body
-        # container conclusions
-        #
-
-        for article in tqdm(articles, "Processing articles:"):
-            current_parent = article.find_parent()
-            collected_elements = []
-            while current_parent:
-                # Find all matching elements inside the current parent
-                found_elements = current_parent.find_all(
-                    "span",
-                    class_=[
-                        "inline docType",
-                        "inline docNumber",
-                        "inline docTitle",
-                        "inline heading",
-                        "inline num",
-                    ],
-                    recursive=False,
-                )
-                collected_elements.extend(found_elements)
-
-                current_parent = current_parent.find_parent()
-
-            article_data = list(map(lambda x: x.text, collected_elements))
-
-            split_result.append("\n".join(article_data + [article.text]))
-
-        return split_result

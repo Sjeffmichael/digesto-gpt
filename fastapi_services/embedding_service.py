@@ -139,12 +139,6 @@ class TextData(BaseModel):
     metadata: dict
 
 
-def delete_all_from_db():
-    vector_db = MilvusClient(uri="http://localhost:19530")
-
-    vector_db.drop_collection(collection_name="LangChainCollection")
-
-
 DIGEST_FILES_DIR = apps.get_app_config("digest_data").path + "/files"
 LAWS_DIR = DIGEST_FILES_DIR + "/laws"
 

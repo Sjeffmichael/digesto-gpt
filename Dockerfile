@@ -33,13 +33,4 @@ RUN poetry install --no-directory --no-root
 
 COPY . /app
 
-#  Apply migrations
-RUN python manage.py migrate --noinput
-
-# Collect static files
-RUN python manage.py collectstatic --noinput
-
-# Compile translations
-RUN django-admin compilemessages --ignore=env
-
 RUN chmod +x startup.sh

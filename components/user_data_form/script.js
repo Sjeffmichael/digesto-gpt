@@ -29,7 +29,7 @@ window.addEventListener('htmx:afterSwap', (event) => {
         $closeBotton.onclick = function(){ modal.hide(); };
 
         document.addEventListener('htmx:afterRequest', (event) => {
-            if (event.detail.requestConfig.verb.toUpperCase() === 'POST') {
+            if (event.detail.requestConfig.verb.toUpperCase() === 'PATCH') {
                 modal.hide();
             }
         });

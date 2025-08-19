@@ -73,7 +73,14 @@
             </div>
             <!-- Modal body -->
             <div class="p-4 md:p-5">
-                <form class="max-w-sm mx-auto">
+                <form class="max-w-sm mx-auto"
+                      hx-patch="{% url 'users:update-user' object.id %}"
+                      hx-trigger="submit"
+                      hx-target="#table-content"
+                      hx-swap="innerHTML"
+                      hx-indicator="#indicator"
+                      hx-vals="js:{ status: document.getElementById('status').value, role: document.getElementById('role').value }"
+                      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
                     <div class="grid gap-4 mb-4 grid-cols-2">
                         <div class="col-span-2">
                             <label for="email"
@@ -107,7 +114,7 @@
                                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                 {% trans "Role" %}
                             </label>
-                            <select id="category"
+                            <select id="role"
                                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
                                 <option {% if not object.is_admin %}selected=""{% endif %}
                                         value="Chatbot user">{% trans "Chatbot user" %}</option>
@@ -119,10 +126,10 @@
                                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                                 {% trans "Status" %}
                             </label>
-                            <select id="category"
+                            <select id="status"
                                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
                                 <option {% if not object.is_active %}selected=""{% endif %} value="false">{% trans "Inactive" %}</option>
-                                <option {% if object.is_admin %}selected=""{% endif %} value="true">{% trans "Active" %}</option>
+                                <option {% if object.is_active %}selected=""{% endif %} value="true">{% trans "Active" %}</option>
                             </select>
                         </div>
                     </div>

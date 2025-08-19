@@ -26,7 +26,7 @@
             <!-- Modal body -->
             <form id="law-data-form"
                   class="p-4 md:p-5"
-                  hx-post="{% url 'upsert-law' %}"
+                  hx-post="{% url 'upsert-law' object.id %}"
                   hx-target="#table-content"
                   hx-vals="js:{ limit: document.getElementById('pag-limit').value, page: document.getElementsByClassName('current-page')[0].text }"
                   hx-encoding='multipart/form-data'>
@@ -47,19 +47,19 @@
                                                 </svg>
                                             <span class="sr-only">Attach file</span>
                                         </button> -->
-                                        <button type="button"
-                                                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg px-3 py-2 text-sm  dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                                        <!-- <button type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg px-3 py-2 text-sm  dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
                                             Pretty
-                                        </button>
+                                        </button> -->
                                     </div>
                                 </div>
                             </div>
                             <div class="px-4 py-2 bg-white rounded-b-lg dark:bg-gray-800">
                                 <label for="editor" class="sr-only">Publish post</label>
                                 <textarea id="editor"
+                                          name="metadata"
                                           rows="12"
                                           class="block w-full px-0 text-sm text-gray-800 bg-white border-0 dark:bg-gray-800 focus:ring-0 dark:text-white dark:placeholder-gray-400"
-                                          placeholder="Write an article..."
+                                          placeholder="Ingresa los metadatos..."
                                           required>{{ object.metadata | pretty_json | escape }}</textarea>
                             </div>
                         </div>
@@ -72,7 +72,8 @@
                                id="file_input"
                                type="file"
                                accept=".html, .pdf"
-                               value="">
+                               value=""
+                               name="file">
                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-300"
                            id="file_input_help">HTML or PDF.</p>
                     </div>

@@ -19,77 +19,86 @@
                     <td class="px-6 py-4 truncate">{{ law.metadata | pretty_json }}</td>
                     <!-- <td class="px-6 py-4 truncate">{{ law.status }}</td> -->
                     <td class="px-6 py-4 flex items-center justify-end">
-                        <!-- <button id="{{ law.id }}-dropdown-button" data-dropdown-toggle="{{ law.id }}-dropdown" class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100" type="button">
-                            <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <button id="{{ law.id }}-dropdown-button"
+                                data-dropdown-toggle="{{ law.id }}-dropdown"
+                                class="inline-flex items-center p-0.5 text-sm font-medium text-center text-gray-500 hover:text-gray-800 rounded-lg focus:outline-none dark:text-gray-400 dark:hover:text-gray-100"
+                                type="button">
+                            <svg class="w-5 h-5"
+                                 aria-hidden="true"
+                                 fill="currentColor"
+                                 viewbox="0 0 20 20"
+                                 xmlns="http://www.w3.org/2000/svg">
                                 <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
                             </svg>
                         </button>
-                        <div id="{{ law.id }}-dropdown" class="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600">
-                            <ul class="py-1 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="{{ law.id }}-dropdown-button">
+                        <div id="{{ law.id }}-dropdown"
+                             class="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600">
+                            <ul class="py-1 text-sm text-gray-700 dark:text-gray-200"
+                                aria-labelledby="{{ law.id }}-dropdown-button">
                                 <li>
-                                    <a href="#" class="flex items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                                        <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                    <a href="#"
+                                       class="flex items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                                       hx-get="{% url 'detail-law' law.id %}"
+                                       hx-target="#law-section"
+                                       hx-swap="afterend">
+                                        <svg class="w-5 h-5 text-gray-800 dark:text-white"
+                                             aria-hidden="true"
+                                             xmlns="http://www.w3.org/2000/svg"
+                                             width="24"
+                                             height="24"
+                                             fill="none"
+                                             viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z" />
                                         </svg>
-                                        <span class="ms-3">Edit</span>
+                                        <span class="ms-3">{% trans "Editar" %}</span>
                                     </a>
                                 </li>
-                                <li>
+                                <!-- <li>
                                     <a href="#" class="flex items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                                         <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13V4M7 14H5a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-2m-1-5-4 5-4-5m9 8h.01" />
                                         </svg>
                                         <span class="ms-3">Download</span>
                                     </a>
-                                </li>
+                                </li> -->
                                 <li>
-                                    <a href="#" class="flex items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                                        <svg class="w-5 h-5 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                    <a href="#"
+                                       class="flex items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                                       data-modal-target="confirmation-modal"
+                                       data-modal-toggle="confirmation-modal"
+                                       hx-delete="{% url 'delete-law' law.id %}"
+                                       hx-vals="js:{ limit: document.getElementById('pag-limit').value, page: document.getElementsByClassName('current-page')[0].text }"
+                                       hx-trigger="confirmed"
+                                       hx-target="#table-content"
+                                       hx-swap="innerHTML"
+                                       hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                       onclick="confirmAction(this)">
+                                        <svg class="w-5 h-5 text-gray-800 dark:text-white"
+                                             aria-hidden="true"
+                                             xmlns="http://www.w3.org/2000/svg"
+                                             width="24"
+                                             height="24"
+                                             fill="none"
+                                             viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z" />
                                         </svg>
-                                        <span class="ms-3">Delete</span>
+                                        <span class="ms-3">{% trans "Delete" %}</span>
                                     </a>
                                 </li>
                             </ul>
-                        </div> -->
-                        <div class="flex flex-row space-y-0 space-x-2">
-                            <button type="button"
-                                    class="px-3 py-2 text-sm font-medium text-center inline-flex items-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                                    hx-get="{% url 'detail-law' law.id %}"
-                                    hx-target="#law-section"
-                                    hx-swap="afterend">
-                                <svg class="w-[17px] h-[17px] text-gray-800 dark:text-white"
-                                     aria-hidden="true"
-                                     xmlns="http://www.w3.org/2000/svg"
-                                     width="24"
-                                     height="24"
-                                     fill="none"
-                                     viewBox="0 0 24 24">
+                        </div>
+                        <!-- <div class="flex flex-row space-y-0 space-x-2">
+                            <button type="button" class="px-3 py-2 text-sm font-medium text-center inline-flex items-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" hx-get="{% url 'detail-law' law.id %}" hx-target="#law-section" hx-swap="afterend">
+                                <svg class="w-[17px] h-[17px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z" />
                                 </svg>
                             </button>
-                            <button class="px-3 py-2 text-sm font-medium text-center inline-flex items-center text-white bg-red-700 rounded-lg hover:bg-red-800 focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
-                                    type="button"
-                                    data-modal-target="confirmation-modal"
-                                    data-modal-toggle="confirmation-modal"
-                                    hx-delete="{% url 'delete-law' law.id %}"
-                                    hx-vals="js:{ limit: document.getElementById('pag-limit').value, page: document.getElementsByClassName('current-page')[0].text }"
-                                    hx-trigger="confirmed"
-                                    hx-target="#table-content"
-                                    hx-swap="innerHTML"
-                                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                    onclick="confirmAction(this)">
-                                <svg class="w-[17px] h-[17px] text-gray-800 dark:text-white"
-                                     aria-hidden="true"
-                                     xmlns="http://www.w3.org/2000/svg"
-                                     width="24"
-                                     height="24"
-                                     fill="none"
-                                     viewBox="0 0 24 24">
+                            <button class="px-3 py-2 text-sm font-medium text-center inline-flex items-center text-white bg-red-700 rounded-lg hover:bg-red-800 focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900" type="button" data-modal-target="confirmation-modal" data-modal-toggle="confirmation-modal" hx-delete="{% url 'delete-law' law.id %}" hx-vals="js:{ limit: document.getElementById('pag-limit').value, page: document.getElementsByClassName('current-page')[0].text }" hx-trigger="confirmed" hx-target="#table-content" hx-swap="innerHTML" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' onclick="confirmAction(this)">
+                                <svg class="w-[17px] h-[17px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z" />
                                 </svg>
                             </button>
-                        </div>
+                        </div> -->
                     </td>
                 </tr>
             {% endfor %}

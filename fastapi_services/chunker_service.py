@@ -112,11 +112,6 @@ async def chunk_and_save_text(request: Request):
     try:
         not_proccessed_laws = await get_not_proccessed_laws()
         for law in tqdm(not_proccessed_laws, "Laws"):
-            # url = row #["reference"]
-            # id = url.split("?idnorm=")[-1]
-            # law = await get_law_by_id(id)
-            # if id != "Mzkx#":
-            #     continue
 
             with open(os.path.join(LAWS_DIR, law.filename)) as law_file:
                 soup = BeautifulSoup(law_file.read(), "html.parser")
@@ -136,11 +131,6 @@ async def chunk_and_save_text(request: Request):
                         key=key.replace("_", " ").replace("norma ", "").capitalize(),
                         value=value,
                     )
-
-                    # if key == "norma_archivos_relacionados":
-                    #     continue
-                    # if key == "norma_numero":
-                    #     metadata[key] = value.split("-")[0]
                 # embbed metadata into text
                 text_chunks = []
                 for index_2 in range(len(chunks[0])):
@@ -162,17 +152,6 @@ async def chunk_and_save_text(request: Request):
             except Exception as e:
                 logging.error(e, stack_info=True, exc_info=True)
 
-                # with open("logs/chunks.log", "w") as f:
-                #     with redirect_stdout(f):
-                # print("hola mundo")
-                # rag_service.statistical_chunker.print(chunks[0])
-                # pass
-                # rag_service.statistical_chunker.print(chunks[0])
-
-                # await rag_service.vector_db.aadd_texts(chunks)
-                # if index == 0:
-                #     break
-                # break
     except Exception as e:
         logging.error(e, stack_info=True, exc_info=True)
 

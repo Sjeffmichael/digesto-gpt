@@ -12,26 +12,14 @@ from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, render
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
-    DeleteView,
     DetailView,
-    ListView,
-    UpdateView,
     View,
 )
 
 from apps.digest_data.models import Law
-from apps.user_authentication.models import User
 
 # isort: off
 from apps.digest_data.pydantic_models import (
-    LawData,
-    LawDataFormContext,
-    LawDataTable,
-    LawMetadata,
-    UserDataFormContext,
-    UserData,
-    UserDataTable,
-    UserMetadata,
     categories,
     ranks,
     statuses,
@@ -84,45 +72,28 @@ class DigestDataCrud(View):
 
     def post(self, request, id=None, *args, **kwargs):
         body_data = {key: value[0] for key, value in request.POST.lists()}
+        print(f"Received body data: {body_data}, id: {id}")
         file = request.FILES.get("file")
-        if id is not None:
+        if id is not None and id != "":
             try:
-                law_data = LawData(
-                    id=id,
-                    filename=file.name,
-                    metadata=LawMetadata.model_construct(
-                        **body_data,
-                    ),
+                Law.objects.filter(id=id).update(
+                    metadata=body_data.get("metadata", {}),
                 )
-                Law.objects.filter(id=law_data.id).update(
-                    metadata=law_data.metadata.model_dump(
-                        by_alias=True, exclude_none=True
-                    ),
-                    filename=law_data.filename,
-                )
-                add_message(request, messages.ERROR, _("Law updated successfully"))
+                add_message(request, messages.SUCCESS, _("Law updated successfully"))
             except Exception as e:
                 add_message(request, messages.ERROR, _("Error updating law"))
         else:
             try:
-                law_data = LawData(
-                    id=str(uuid.uuid4()),
-                    filename=file.name,
-                    metadata=LawMetadata.model_construct(
-                        **body_data,
-                    ),
-                )
                 new_law = Law(
-                    id=law_data.id,
-                    metadata=law_data.metadata.model_dump(
-                        by_alias=True, exclude_none=True
-                    ),
-                    filename=law_data.filename,
+                    id=str(uuid.uuid4()),
+                    metadata=body_data.get("metadata", {}),
+                    filename=file.name if file else "",
                 )
                 new_law.save()
-                self.handle_uploaded_file(file, law_data.id)
+                self.handle_uploaded_file(file, new_law.id)
                 add_message(request, messages.SUCCESS, _("Law created successfully"))
             except Exception as e:
+                print(f"Error creating law: {e}")
                 add_message(request, messages.ERROR, _("Error creating law"))
 
         query_set = self.get_queryset()
@@ -130,6 +101,7 @@ class DigestDataCrud(View):
             query_set,
             int(body_data.get("page", "1")),
             int(body_data.get("limit", "10")),
+            body_data.get("search", ""),
         )
 
         return render(request, self.template_name, context)
@@ -140,20 +112,8 @@ class DigestDataCrud(View):
         if search:
             return Law.objects.filter(
                 Q(filename__icontains=search) | Q(metadata__icontains=search)
-            )
-        return Law.objects.all()
-        # laws_data = []
-        # for law in query_set:
-        #     laws_data.append(
-        #         LawDataTable(
-        #             id=law.id,
-        #             title=law.metadata.get("norma_titulo"),
-        #             publication_date=law.metadata.get("norma_fecha_publicacion"),
-        #             status=law.metadata.get("norma_estado"),
-        #         )
-        #     )
-
-        # return laws_data
+            ).order_by("-updated_at")
+        return Law.objects.all().order_by("-updated_at")
 
     def get_context_data(self, queryset, page, limit, search):
 
@@ -188,11 +148,14 @@ class DigestDataCrud(View):
         return context
 
     def handle_uploaded_file(self, f, id_):
-        extension = mimetypes.guess_extension(f.content_type)
-        new_filename = id_ + extension
-        with open(f"apps/digest_data/files/laws/{new_filename}", "wb+") as destination:
-            for chunk in f.chunks():
-                destination.write(chunk)
+        if f:
+            extension = mimetypes.guess_extension(f.content_type) if f else ".html"
+            new_filename = id_ + extension
+            with open(
+                f"apps/digest_data/files/laws/{new_filename}", "wb+"
+            ) as destination:
+                for chunk in f.chunks():
+                    destination.write(chunk)
 
 
 class DigestDataDetailView(DetailView):
@@ -206,6 +169,7 @@ class DigestDataDetailView(DetailView):
         modal_context = {
             "modal_header": _("Update Law"),
             "confirm_botton_text": _("Update Law"),
+            "csrf_token": get_token(self.request),
         }
         context.update(**modal_context)
 
@@ -217,38 +181,15 @@ class DigestDataForm(View):
     confirm_botton_text = ""
 
     def get(self, request, id=None):
-        queryset = None
-        if id is not None:
-            queryset = self.get_queryset(id)
 
-        # context = self.get_context_data(queryset, request)
-
-        return LawDataForm.render_to_response(kwargs={"data_context": {}})
+        return LawDataForm.render_to_response(
+            context={
+                "modal_header": _("Create Law"),
+                "confirm_botton_text": _("Create Law"),
+                "csrf_token": get_token(request),
+            }
+        )
 
     def get_queryset(self, id):
         law = Law.objects.get(pk=id)
         return law
-
-    # def get_context_data(self, queryset: Law, request):
-    #     csrf_token = get_token(request)
-    #     law_data = None
-    #     if queryset is not None:
-    #         law_data = LawData(
-    #             id=queryset.id,
-    #             filename=queryset.filename,
-    #             metadata=LawMetadata(**queryset.metadata),
-    #         )
-
-    #     context = LawDataFormContext(
-    #         modal_header=str(self.modal_header),
-    #         csrf_token=csrf_token,
-    #         confirm_botton_text=str(self.confirm_botton_text),
-    #         statuses=statuses,
-    #         categories=categories,
-    #         ranks=ranks,
-    #         subjects=subjects,
-    #         law_data=law_data,
-    #         administrator=administrator,
-    #     )
-
-    #     return context

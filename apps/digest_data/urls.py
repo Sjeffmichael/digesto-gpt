@@ -20,7 +20,7 @@ urlpatterns = [
         name="delete-law",
     ),
     re_path(
-        r"^upsert(?:/(?P<id>\d+))?$",
+        r"^upsert(?:/(?P<id>[-\w=+/]*))?$",
         DigestDataCrud.as_view(template_name="digest_data/digest_data_table.html"),
         name="upsert-law",
     ),
