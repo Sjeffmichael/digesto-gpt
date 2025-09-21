@@ -66,7 +66,7 @@ class ChatConsumer(WebsocketConsumer):
                     "chats/conversations_list_item.html",
                     {
                         "title": conversation_title,
-                        # "slug": id_,
+                        "slug": id_,
                         "created_date": conversation.created_date,
                         "csrf_token": self.scope["cookies"]["csrftoken"],
                     },
