@@ -1,0 +1,56 @@
+services:
+  django-server:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        - ENVIRONMENT=develop
+    expose:
+      - 8000
+    command: ./startup.sh
+    env_file:
+      - .env
+    volumes:
+      - static_files:/app/nginx/static
+    networks:
+      - app-net
+    depends_on:
+      - db
+
+  nginx:
+    build:
+      context: ./nginx/
+    ports:
+      - 443:443
+    volumes:
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ./nginx/certs/:/etc/nginx/certs/
+      - static_files:/home/app/static
+    networks:
+      - app-net
+    depends_on:
+      - django-server
+
+  db:
+    container_name: postgres_db
+    hostname: postgres.db
+    image: postgres:alpine
+    restart: on-failure:2
+    networks:
+      - app-net
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command: [ "postgres", "-c", "listen_addresses=*"]
+
+volumes:
+  static_files:
+  postgres_data:
+
+networks:
+  app-net:

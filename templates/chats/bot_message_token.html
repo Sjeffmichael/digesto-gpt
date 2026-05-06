@@ -1,0 +1,2 @@
+{% load chats_custom_filters %}
+<div id="msg_id_{{ id }}" hx-swap-oob="innerHTML">{{ token|render_markdown }}</div>

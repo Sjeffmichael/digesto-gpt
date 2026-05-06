@@ -14,14 +14,22 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
 
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
+from django.views.decorators.cache import cache_page
+from django.views.i18n import JavaScriptCatalog
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
     path("__reload__/", include("django_browser_reload.urls")),
     path("authentication/", include("apps.user_authentication.urls")),
     path("", include("apps.chats.urls")),
-    path("", include("apps.users.urls")),      
-]
+    path("users/", include("apps.users.urls")),
+    path("laws/", include("apps.digest_data.urls")),
+    path("metrics/", include("apps.metrics.urls")),
+    path("i18n/", include("django.conf.urls.i18n")),
+    path("jsi18n/", JavaScriptCatalog.as_view(), name="javascript-catalog"),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

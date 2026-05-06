@@ -1,8 +1,28 @@
 from django.urls import path
-from .views import UserChats
+
+from .views import Chats, ConversationDeleteView, MessagesListView, ConversationEditTitleView
 
 app_name = "chats"
 
 urlpatterns = [
-    path("", UserChats.as_view(), name="index"),
+    path(
+        "",
+        Chats.as_view(),
+        name="chat-section",
+    ),
+    path(
+        "<str:slug>",
+        MessagesListView.as_view(),
+        name="conversation",
+    ),
+    path(
+        "edit-title/<str:slug>",
+        ConversationEditTitleView.as_view(),
+        name="conversation-edit-title",
+    ),
+    path(
+        "delete/<str:slug>",
+        ConversationDeleteView.as_view(),
+        name="conversation-delete",
+    ),
 ]

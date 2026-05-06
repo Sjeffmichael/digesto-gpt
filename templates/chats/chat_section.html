@@ -1,0 +1,84 @@
+{% load i18n %}
+<div id="page-content"
+     {% if use_oob %}hx-swap-oob="true"{% endif %}
+     class="border-gray-200 dark:border-gray-700"
+     hx-history-elt>
+    <section class="fixed top-0 left-0 right-0 bottom-0 sm:ml-64 mt-14 bg-gray-50 dark:bg-gray-900 flex flex-col">
+        <div class="flex-grow flex flex-col" hx-ext="ws" ws-connect="/ws/chat/">
+            <div id="message-list"
+                 class="block overflow-x-auto overflow-y-auto flex-grow h-[50vh]">
+                <div class="flex items-start gap-2.5 p-5">
+                    <div class="relative inline-flex items-center justify-center w-8 h-8 overflow-hidden bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-blue-300 dark:focus:ring-blue-800 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             width="20"
+                             height="20"
+                             fill="#FFFFFF"
+                             viewBox="0 0 256 256">
+                            <path d="M197.58,129.06,146,110l-19-51.62a15.92,15.92,0,0,0-29.88,0L78,110l-51.62,19a15.92,15.92,0,0,0,0,29.88L78,178l19,51.62a15.92,15.92,0,0,0,29.88,0L146,178l51.62-19a15.92,15.92,0,0,0,0-29.88ZM137,164.22a8,8,0,0,0-4.74,4.74L112,223.85,91.78,169A8,8,0,0,0,87,164.22L32.15,144,87,123.78A8,8,0,0,0,91.78,119L112,64.15,132.22,119a8,8,0,0,0,4.74,4.74L191.85,144ZM144,40a8,8,0,0,1,8-8h16V16a8,8,0,0,1,16,0V32h16a8,8,0,0,1,0,16H184V64a8,8,0,0,1-16,0V48H152A8,8,0,0,1,144,40ZM248,88a8,8,0,0,1-8,8h-8v8a8,8,0,0,1-16,0V96h-8a8,8,0,0,1,0-16h8V72a8,8,0,0,1,16,0v8h8A8,8,0,0,1,248,88Z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div class="flex flex-col max-w-md w-full leading-1.5 p-4 border-gray-200 bg-gray-100 rounded-e-xl rounded-es-xl dark:bg-gray-700">
+                        <div id="msg_id_{{ message.id }}"
+                             class="break-words font-normal text-sm py-2.5 text-gray-900 dark:text-white">
+                            Hola, soy tu asistente Digesto GPT. Puedes hacer cualquier consulta relacionada con información contenida en el
+                            {# djlint:off #}
+                                <a href="http://digesto.asamblea.gob.ni/consultas/digestos/"
+                                    target="_blank"
+                                    class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Digesto Jurídico Nicaragüense</a>.
+                            {# djlint:on #}
+                        </div>
+                    </div>
+                </div>
+                {% for message in messages %}
+                    {% include "chats/message_item.html" %}
+                {% endfor %}
+            </div>
+            <form id="chat-form" ws-send>
+                <label for="chat-textarea" class="sr-only">Your message</label>
+                <div class="flex items-center px-3 py-2  bg-gray-50 dark:bg-gray-700">
+                    <input name="message"
+                           id="chat-textarea"
+                           type="text"
+                           rows="1"
+                           class="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                           placeholder="{% trans "Write a query..." %}"
+                           required />
+                    <button type="submit"
+                            class="inline-flex justify-center p-2 text-blue-600 rounded-full cursor-pointer hover:bg-blue-100 dark:text-blue-500 dark:hover:bg-gray-600"
+                            onclick="removeSidebarHighlightButton()">
+                        <svg class="w-5 h-5 rotate-90 rtl:-rotate-90"
+                             aria-hidden="true"
+                             xmlns="http://www.w3.org/2000/svg"
+                             fill="currentColor"
+                             viewBox="0 0 18 20">
+                            <path d="m17.914 18.594-8-18a1 1 0 0 0-1.828 0l-8 18a1 1 0 0 0 1.157 1.376L8 18.281V9a1 1 0 0 1 2 0v9.281l6.758 1.689a1 1 0 0 0 1.156-1.376Z" />
+                        </svg>
+                        <span class="sr-only">Send message</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <script>
+        function scrollToBottom() {
+            const messagesListDiv = document.getElementById("message-list")
+
+            if (messagesListDiv) {
+                requestAnimationFrame(() => {
+                    messagesListDiv.scrollTop = messagesListDiv.scrollHeight;
+                });
+            }
+        }
+        // scroll to bottom when reloading page
+        window.addEventListener("DOMContentLoaded", scrollToBottom)
+        // scroll to bottom after out of band swap
+        window.addEventListener("htmx:oobAfterSwap", scrollToBottom)
+        // scroll to bottom after swap
+        window.addEventListener("htmx:afterSwap", scrollToBottom)
+        // reset input after sending message
+        document.getElementById("chat-form").addEventListener("htmx:wsAfterSend", function (event) {
+            this.reset();
+        });
+        </script>
+    </section>
+</div>

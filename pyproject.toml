@@ -4,18 +4,57 @@ version = "0.1.0"
 description = ""
 authors = ["Sjeffmichael <sjeffmichael56@gmail.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.10,<3.13"
 django = "^4.2.5"
 django-tailwind = "^3.6.0"
 django-browser-reload = "^1.11.0"
 django-htmx = "^1.16.0"
-langchain = "^0.0.285"
 django-compressor = "^4.4"
 django-widget-tweaks = "^1.5.0"
-
+celery = "^5.4.0"
+redis = "^5.0.7"
+selenium = "^4.23.0"
+django-components = "^0.86"
+pre-commit = "^3.8.0"
+python-dotenv = "^1.0.1"
+channels = "^4.1.0"
+daphne = "^4.1.2"
+markdown = "^3.7"
+pymilvus = "^2.4.7"
+fastapi = "^0.115.0"
+uvicorn = "^0.31.0"
+grandalf = "^0.8"
+langchain = "^0.3.13"
+langchain-core = "^0.3.28"
+langchain-community = "^0.3.13"
+langchain-experimental = "^0.3.4"
+langchain-google-genai = "^2.0.7"
+langchain-huggingface = "^0.1.2"
+ragas = "^0.2.9"
+html2text = "^2024.2.26"
+langchain-milvus = "^0.1.7"
+tqdm = "^4.67.1"
+google-cloud-aiplatform = {version = "^1.83.0", extras = ["tokenization"]}
+google-genai = "^1.5.0"
+beautifulsoup4 = "^4.13.3"
+blinker = "1.7.0"
+selenium-wire = "^5.1.0"
+semantic-chunkers = "^0.0.10"
+matplotlib = "^3.10.3"
+ragatouille = "^0.0.9.post2"
+psutil = "^7.0.0"
+psycopg2-binary = "^2.9.10"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "django"
+
+[tool.djlint]
+profile = "django"
+ignore = "H031,H006,H025"
