@@ -66,6 +66,7 @@ class DigestDataCrud(View):
             query_set,
             int(body_data.get("page", "1")),
             int(body_data.get("limit", "10")),
+            body_data.get("search", ""),
         )
 
         return render(request, self.template_name, context)

@@ -61,6 +61,7 @@ class ConversationEditTitleView(UpdateView):
     fields = ["title"]
     template_name = "chats/conversation_edit_title.html"
     context_object_name = "conversation"
+    success_url = reverse_lazy("chats:chat-section")
 
     def get_object(self, queryset=None):
         slug = self.kwargs.get("slug")
